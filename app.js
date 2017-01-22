@@ -28,6 +28,10 @@ var ipAddr = "192.168.1.15";
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
 
+//Used for synchronous operation
+var categoryList = [];
+var categoryLength;
+
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
@@ -37,26 +41,43 @@ MongoClient.connect(url, function(err, db) {
 
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(db, fileCollection, categoryCollection);
-  printCategories(db, categoryCollection);
 
-  //
+
 });
 
 function validateDB(db, fileCollection, categoryCollection) {
+  validateCategories(db, categoryCollection);
 };
 
-function printCategories(db, categoryCollection) {
+function validateCategories(db, categoryCollection, sv) {
+  if (!sv) {
+    getCategoryDB(db, categoryCollection, sv);
+  } else {
+    categoryValidation(db, categoryCollection, sv);
+    console.log(sv);
+    categoryList = [];
+    categoryLength = null;
+    return sv;
+  }
+};
+
+function getCategoryDB(db, categoryCollection, sv) {
   categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
     console.log('');
     console.log("Current categories are:");
+    categoryLength = categories.length;
     for (var i = 0; i < categories.length; i++) {
       console.log(categories[i].Category);
+      categoryList.push(categories[i].Category);
     };
+    sv = categoryList;
+    validateCategories(db, categoryCollection, sv)
   });
 };
 
+function categoryValidation(db, categoryCollection, categoriesDB) {
 
-
+};
 //starts server on specified address
 var server = app.listen(app.get('port'), ipAddr, function() {
     debug('API server listening on port ' + server.address().port);
