@@ -7,6 +7,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongodb = require('mongodb');
 var MongoClient = mongodb.MongoClient;
+var fs = require('fs');
+var path = require('path');
 
 var home = require('./routes/index');
 var viewCategory = require('./routes/viewcategory');
@@ -44,27 +46,29 @@ MongoClient.connect(url, function(err, db) {
 
 
 });
-
+//Process for validating both category DB and file DB
 function validateDB(db, fileCollection, categoryCollection) {
   validateCategories(db, categoryCollection);
 };
 
+//function logic for process of validating categories
 function validateCategories(db, categoryCollection, sv) {
   if (!sv) {
     getCategoryDB(db, categoryCollection, sv);
   } else {
     categoryValidation(db, categoryCollection, sv);
-    console.log(sv);
+    console.log('');
     categoryList = [];
     categoryLength = null;
     return sv;
   }
 };
 
+//Gets the current categories from actual database
 function getCategoryDB(db, categoryCollection, sv) {
   categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
     console.log('');
-    console.log("Current categories are:");
+    console.log("Current database categories are:");
     categoryLength = categories.length;
     for (var i = 0; i < categories.length; i++) {
       console.log(categories[i].Category);
@@ -75,8 +79,28 @@ function getCategoryDB(db, categoryCollection, sv) {
   });
 };
 
+//gets categories via actual folders in media location
 function categoryValidation(db, categoryCollection, categoriesDB) {
+  fs.readdir(mediaDir, function (err, files) {
+    if (err) {
+        throw err;
+    }
+    var verifiedCategories = [];
+    console.log('Actual Categories are:');
+    files.map(function (file) {
+        return path.join(file);
+    }).forEach(function (file) {
+        if (path.extname(file) == '') {
+          console.log("%s", file);
+          verifiedCategories.push(file);
+        }
+    });
 
+    //Now to compare to the database...
+    console.log('');
+    console.log("Comparing and making appropriate changes to database...")
+
+  });
 };
 //starts server on specified address
 var server = app.listen(app.get('port'), ipAddr, function() {
