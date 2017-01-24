@@ -10,6 +10,9 @@ var MongoClient = mongodb.MongoClient;
 var fs = require('fs');
 var path = require('path');
 
+var updateCategories = require('./libs/categoryvalidation');
+//var updateFiles = require('./libs/filevalidation');
+
 var home = require('./routes/index');
 var viewCategory = require('./routes/viewcategory');
 
@@ -100,8 +103,23 @@ function categoryValidation(db, categoryCollection, categoriesDB) {
     console.log('');
     console.log("Comparing and making appropriate changes to database...")
 
-  });
-};
+    if (verifiedCategories.length == categoriesDB.length && verifiedCategories.every(function(u, i) {
+      return u === categoriesDB[i];
+    })) {
+      console.log('No changes necessary, database is up to date!');
+    } else {
+      console.log('Database not up to date, making database changes...');
+      updateCategories.updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
+    }});
+  };
+
+
+
+
+
+
+
+
 //starts server on specified address
 var server = app.listen(app.get('port'), ipAddr, function() {
     debug('API server listening on port ' + server.address().port);
