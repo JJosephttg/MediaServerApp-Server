@@ -73,6 +73,7 @@ function getCategoryDB(db, categoryCollection, sv) {
     console.log('');
     console.log("Current database categories are:");
     categoryLength = categories.length;
+    categories = categories.sort();
     for (var i = 0; i < categories.length; i++) {
       console.log(categories[i].Category);
       categoryList.push(categories[i].Category);
@@ -103,8 +104,8 @@ function categoryValidation(db, categoryCollection, categoriesDB) {
     console.log('');
     console.log("Comparing and making appropriate changes to database...")
 
-    if (verifiedCategories.length == categoriesDB.length && verifiedCategories.every(function(u, i) {
-      return u === categoriesDB[i];
+    if (verifiedCategories.sort().length == categoriesDB.sort().length && verifiedCategories.sort().every(function(u, i) {
+      return u === categoriesDB.sort()[i];
     })) {
       console.log('No changes necessary, database is up to date!');
     } else {
