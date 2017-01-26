@@ -33,9 +33,12 @@ var ipAddr = "192.168.1.15";
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
 
-//Used for synchronous operation
+//Used for synchronous operation, and passing values from callbacks outside.
 var categoryList = [];
-var categoryLength;
+
+var filenameList = [];
+var filepathList = [];
+var fileExtList = [];
 
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
@@ -52,71 +55,125 @@ MongoClient.connect(url, function(err, db) {
 //Process for validating both category DB and file DB
 function validateDB(db, fileCollection, categoryCollection) {
   validateCategories(db, categoryCollection);
+  validateFiles(db, fileCollection);
 };
 
 //function logic for process of validating categories
 function validateCategories(db, categoryCollection, sv) {
   if (!sv) {
-    getCategoryDB(db, categoryCollection, sv);
+    getCategoryDB(db, categoryCollection);
   } else {
     categoryValidation(db, categoryCollection, sv);
-    console.log('');
+    //console.log('');
     categoryList = [];
-    categoryLength = null;
-    return sv;
   }
 };
 
-//Gets the current categories from actual database
-function getCategoryDB(db, categoryCollection, sv) {
-  categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
+//function logic for process of validating files
+function validateFiles(db, fileCollection, filenameList, filepathList, fileExtList) {
+  console.log('');
+  if (!filenameList && !filepathList && !fileExtList) {
+    getFileDB(db, fileCollection);
+  } else {
+    fileValidation(db, fileCollection, filenameList, filepathList, fileExtList);
     console.log('');
-    console.log("Current database categories are:");
-    categoryLength = categories.length;
+    filenameList = [];
+    filepathList = [];
+    fileExtList = [];
+  }
+}
+
+//Gets the current categories from actual database
+function getCategoryDB(db, categoryCollection) {
+  categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
+    //console.log('');
+    //console.log("Current database categories are:");
     categories = categories.sort();
     for (var i = 0; i < categories.length; i++) {
-      console.log(categories[i].Category);
+      //console.log(categories[i].Category);
       categoryList.push(categories[i].Category);
     };
-    sv = categoryList;
-    validateCategories(db, categoryCollection, sv)
+    validateCategories(db, categoryCollection, categoryList);
   });
 };
 
-//gets categories via actual folders in media location
+//Gets current files from database
+function getFileDB(db, fileCollection) {
+  fileCollection.find({}, {"Filename": 1, "_id" : 0, "Filepath": 1, "FileExt": 1, "Description": 1}).toArray(function(err, files) {
+    console.log("Current files are:");
+    files = files.sort();
+    for (var i = 0; i < files.length; i++) {
+      console.log("%s at %s", files[i].Filename, files[i].Filepath);
+      filenameList.push(files[i].Filename);
+      filepathList.push(files[i].Filepath);
+      fileExtList.push(files[i].FileExt);
+    }
+    validateFiles(db, fileCollection, filenameList, filepathList, fileExtList);
+  });
+};
+
+
+//gets categories via actual folders in media location and validates against database
 function categoryValidation(db, categoryCollection, categoriesDB) {
   fs.readdir(mediaDir, function (err, files) {
     if (err) {
         throw err;
     }
     var verifiedCategories = [];
-    console.log('Actual Categories are:');
+    //console.log('Actual Categories are:');
     files.map(function (file) {
         return path.join(file);
     }).forEach(function (file) {
         if (path.extname(file) == '') {
-          console.log("%s", file);
+          //console.log("%s", file);
           verifiedCategories.push(file);
         }
     });
-
     //Now to compare to the database...
-    console.log('');
-    console.log("Comparing and making appropriate changes to database...")
+    //console.log('');
+    //console.log("Comparing and making appropriate category changes to database...")
 
     if (verifiedCategories.sort().length == categoriesDB.sort().length && verifiedCategories.sort().every(function(u, i) {
       return u === categoriesDB.sort()[i];
     })) {
-      console.log('No changes necessary, database is up to date!');
+      //console.log('No category changes necessary, database is up to date!');
     } else {
-      console.log('Database not up to date, making database changes...');
-      updateCategories.updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
+      //console.log('Category database not up to date, making database changes...');
+      updateCategories.updateCDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
     }});
   };
 
+//gets files via folders in media location and validates the files to database
+function fileValidation(db, fileCollection, filenamesDB, filepathsDB, fileExtDB) {
+  var walk = function(dir, done) {
+    var results = [];
+    fs.readdir(dir, function(err, list) {
+      if (err) return done(err);
+      var i = 0;
+      (function next() {
+        var file = list[i++];
+        if (!file) return done(null, results);
+        file = path.resolve(dir, file);
+        fs.stat(file, function(err, stat) {
+          if (stat && stat.isDirectory()) {
+            walk(file, function(err, res) {
+              results = results.concat(res);
+              next();
+            });
+          } else {
+            results.push(file);
+            next();
+          }
+        });
+      })();
+    });
+  };
 
-
-
+  walk(mediaDir, function(err, results) {
+    if (err) throw err;
+    console.log(results);
+  })
+};
 
 
 

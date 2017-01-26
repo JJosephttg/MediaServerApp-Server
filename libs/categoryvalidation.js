@@ -1,6 +1,3 @@
-var mongodb = require('mongodb');
-var MongoClient = mongodb.MongoClient;
-
 function compareDB(a, b){
  var not_in_a=new Array;
  var j=0;
@@ -10,7 +7,7 @@ function compareDB(a, b){
     j++;
   }
  }
- if (not_in_a != "") {console.log(not_in_a)};
+ if (not_in_a != "") {/*console.log(not_in_a)*/};
  return not_in_a
 };
 
@@ -45,7 +42,7 @@ function updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection
   var addedCategories = categoriesAdded(verifiedCategories, categoriesDB);
   addtoDB(addedCategories, db, categoryCollection);
   removefromDB(removedCategories, db, categoryCollection);
-  console.log("Database up to date");
+  //console.log("Category database up to date");
 };
 
-exports.updateDatabase = updateDatabase;
+exports.updateCDatabase = updateDatabase;
