@@ -45,4 +45,4 @@ function updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection
   //console.log("Category database up to date");
 };
 
-exports.updateCDatabase = updateDatabase;
+exports.updateDatabase = updateDatabase;

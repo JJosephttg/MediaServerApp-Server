@@ -1,50 +1,81 @@
+var _ = require('underscore');
+
+
 function compareDB(a, b){
- var not_in_a=new Array;
- var j=0;
- for(var i=0; i<=a.length-1;i++){
-  if(b.indexOf(a[i])==-1){
-    not_in_a[j]=a[i];
-    j++;
-  }
- }
- if (not_in_a != "") {console.log(not_in_a)};
- return not_in_a
+  //for files added: a = fileList being compared to b = filesDB
+  //for files removed: a = filesDB being compared to b = fileList
+  var c = _.pluck(b, 'path');
+  //console.log(c);
+  var not_in_a=new Array;
+  var j=0;
+  //Checks to see if database or files are empty...
+  if(!a && !b) {return;}
+  else if(!a) {return;}
+  else if(!b) {return;}
+  else {
+    for(var i=0; i<=a.length-1;i++){
+      if(c.indexOf(a[i].path)==-1){
+        not_in_a[j]=a[i];
+        j++;
+      }
+    }
+    if (not_in_a != "") {/*console.log(not_in_a)*/};
+    return not_in_a
+  }
 };
 
-function filesAdded(verifiedFiles, filesDB) {
-  var toAdd = compareDB(verifiedFiles, FilesDB);
-  return toAdd;
+function filesAdded(fileList, filesDB, fileCollection) {
+  var compare = compareDB(fileList, filesDB);
+  return compare;
 };
 
-function filesRemoved(verifiedFiles, filesDB) {
-  var toRemove = compareDB(filesDB, verifiedFiles);
-  return toRemove;
+function filesRemoved(fileList, filesDB, fileCollection) {
+  var compare = compareDB(filesDB, fileList);
+  return compare;
 };
 
-function addtoDB(files, filepaths, db, fileCollection) {
+function addtoDB(files, db, fileCollection) {
+  console.log('Adding Files:');
+  console.log(files);
   for(var i = 0; i < files.length; i++) {
     var obj = {
-      Filename: files[i],
-      Filepath: filepaths[i],
-      Description: ''
+      name: files[i].name,
+      path: files[i].path,
+      ext: files[i].ext,
+      category: files[i].category,
     }
+    //console.log(obj);
     fileCollection.insert(obj);
   }
 };
 
-function removefromDB(files, filepaths, db, fileCollection) {
+function removefromDB(files, db, fileCollection) {
   for(var i = 0; i < files.length; i++) {
-    //IN THE FUTURE FOR MORE THAN ONE FIELD, JUST PASS IT THROUGH TO THIS FIELD OTHER THAN filename!
-    fileCollection.remove({ "Filename" : files[i], "Path" : filespath[i] });
+    fileCollection.remove({"path" : files[i].path });
   }
 };
 
-function updateDatabase(verifiedFiles, filesDB, db, fileCollection) {
-  var removedFiles = filesRemoved(verifiedFiles, filesDB);
-  var addedFiles = filesAdded(verifiedFiles, filesDB);
-  addtoDB(addedFiles, db, fileCollection);
-  removefromDB(removedFiles, filepaths db, fileCollection);
-  console.log("File database up to date");
+function updateDatabase(fileList, filesDB, db, fileCollection) {
+  var removedFiles = filesRemoved(fileList, filesDB, fileCollection);
+  var addedFiles = filesAdded(fileList, filesDB, fileCollection);
+  if (fileList == '' && filesDB != '') {
+    //delete all from collection
+    fileCollection.remove({});
+    console.log('No actual files exist, deleted file database');
+  } else if (filesDB == '' && fileList != '') {
+    //just add the files to database
+    addtoDB(addedFiles, db, fileCollection);
+    console.log("File database up to date");
+  } else if (fileList != '' && filesDB != '') {
+    //add and remove files
+    if(removedFiles != '') {
+      removefromDB(removedFiles, db, fileCollection);
+    }
+    if(addedFiles != '') {
+      addtoDB(addedFiles, db, fileCollection);
+    }
+    console.log('File database: Changes were made...');
+  }
 };
 
-exports.updateFDatabase = updateDatabase;
+exports.updateDatabase = updateDatabase;

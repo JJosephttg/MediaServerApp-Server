@@ -11,7 +11,7 @@ var fs = require('fs');
 var path = require('path');
 
 var updateCategories = require('./libs/categoryvalidation');
-//var updateFiles = require('./libs/filevalidation');
+var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
 var viewCategory = require('./routes/viewcategory');
@@ -23,6 +23,7 @@ var app = express();
 
 //The location of the media which the server will look for..
 var mediaDir = "E:/Media/";
+var mediaDirBack = "E:\\Media\\"
 
 
 //set up server
@@ -36,9 +37,7 @@ var url = 'mongodb://localhost:27017/MediaServerDB';
 //Used for synchronous operation, and passing values from callbacks outside.
 var categoryList = [];
 
-var filenameList = [];
-var filepathList = [];
-var fileExtList = [];
+var fileListDB = [];
 
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
@@ -70,16 +69,13 @@ function validateCategories(db, categoryCollection, sv) {
 };
 
 //function logic for process of validating files
-function validateFiles(db, fileCollection, filenameList, filepathList, fileExtList) {
+function validateFiles(db, fileCollection, filePathDB) {
   console.log('');
-  if (!filenameList && !filepathList && !fileExtList) {
+  if (!filePathDB) {
     getFileDB(db, fileCollection);
   } else {
-    fileValidation(db, fileCollection, filenameList, filepathList, fileExtList);
-    console.log('');
-    filenameList = [];
-    filepathList = [];
-    fileExtList = [];
+    fileValidation(db, fileCollection, filePathDB);
+
   }
 }
 
@@ -99,16 +95,21 @@ function getCategoryDB(db, categoryCollection) {
 
 //Gets current files from database
 function getFileDB(db, fileCollection) {
-  fileCollection.find({}, {"Filename": 1, "_id" : 0, "Filepath": 1, "FileExt": 1, "Description": 1}).toArray(function(err, files) {
+  fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
     console.log("Current files are:");
     files = files.sort();
+    var filePathDB = [];
     for (var i = 0; i < files.length; i++) {
-      console.log("%s at %s", files[i].Filename, files[i].Filepath);
-      filenameList.push(files[i].Filename);
-      filepathList.push(files[i].Filepath);
-      fileExtList.push(files[i].FileExt);
+      console.log("%s at %s", files[i].name, files[i].path);
+      fileListDB.push({
+        name: files[i].name,
+        path: files[i].path,
+        ext: files[i].ext,
+        category: files[i].category
+      });
+      filePathDB.push(files[i].path);
     }
-    validateFiles(db, fileCollection, filenameList, filepathList, fileExtList);
+    validateFiles(db, fileCollection, fileListDB, filePathDB);
   });
 };
 
@@ -139,12 +140,14 @@ function categoryValidation(db, categoryCollection, categoriesDB) {
       //console.log('No category changes necessary, database is up to date!');
     } else {
       //console.log('Category database not up to date, making database changes...');
-      updateCategories.updateCDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
+      updateCategories.updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
     }});
   };
 
 //gets files via folders in media location and validates the files to database
-function fileValidation(db, fileCollection, filenamesDB, filepathsDB, fileExtDB) {
+function fileValidation(db, fileCollection, filePathDB) {
+  //Find files and fill appropriate items...
+  //console.log('Actual Files are:');
   var walk = function(dir, done) {
     var results = [];
     fs.readdir(dir, function(err, list) {
@@ -156,23 +159,42 @@ function fileValidation(db, fileCollection, filenamesDB, filepathsDB, fileExtDB)
         file = path.resolve(dir, file);
         fs.stat(file, function(err, stat) {
           if (stat && stat.isDirectory()) {
-            walk(file, function(err, res) {
+              walk(file, function(err, res) {
               results = results.concat(res);
               next();
             });
           } else {
-            results.push(file);
+            var dirValues = path.parse(file).dir.split(mediaDirBack);
+            var category = dirValues[1];
+            if(category) {
+              results.push({
+                name: path.parse(file).name,
+                path: path.parse(file).dir + '\\' + path.parse(file).base,
+                ext: path.parse(file).ext,
+                category: category
+              });
+              //console.log(path.parse(file).name);
+            }
             next();
           }
         });
       })();
     });
   };
-
   walk(mediaDir, function(err, results) {
     if (err) throw err;
-    console.log(results);
-  })
+    var fileList = results;
+    var filePathList = [];
+    for(var i = 0; i < results.length; i++) {
+      filePathList.push(results[i].path);
+    }
+    if(fileList.length == fileListDB.length && fileList.sort() == fileListDB.sort()) {
+      console.log('All up to date');
+    } else {
+      console.log('Not up to date, updating file database');
+      updateFiles.updateDatabase(fileList, fileListDB, db, fileCollection, filePathDB, filePathList);
+    }
+  });
 };
 
 
