@@ -9,6 +9,7 @@ var mongodb = require('mongodb');
 var MongoClient = mongodb.MongoClient;
 var fs = require('fs');
 var path = require('path');
+var _ = require('underscore');
 
 var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
@@ -188,7 +189,24 @@ function fileValidation(db, fileCollection, filePathDB) {
     for(var i = 0; i < results.length; i++) {
       filePathList.push(results[i].path);
     }
-    if(fileList.length == fileListDB.length && fileList.sort() == fileListDB.sort()) {
+    function sorting(List) {
+      var isSame = List.sort(function(a, b) {
+        var nameA = a.name.toLowerCase(); // ignore upper and lowercase
+        var nameB = b.name.toLowerCase(); // ignore upper and lowercase
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
+        // names must be equal
+        return 0;
+      });
+    }
+    var fileListSorted = sorting(fileList);
+    var fileListDBSorted = sorting(fileListDB);
+
+    if(fileList.length == fileListDB.length ) {
       console.log('All up to date');
     } else {
       console.log('Not up to date, updating file database');

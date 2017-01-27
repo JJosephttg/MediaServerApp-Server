@@ -7,7 +7,7 @@ function compareDB(a, b){
     j++;
   }
  }
- if (not_in_a != "") {/*console.log(not_in_a)*/};
+ if (not_in_a != "") {};
  return not_in_a
 };
 

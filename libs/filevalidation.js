@@ -19,7 +19,7 @@ function compareDB(a, b){
         j++;
       }
     }
-    if (not_in_a != "") {/*console.log(not_in_a)*/};
+    if (not_in_a != "") {};
     return not_in_a
   }
 };
@@ -35,8 +35,6 @@ function filesRemoved(fileList, filesDB, fileCollection) {
 };
 
 function addtoDB(files, db, fileCollection) {
-  console.log('Adding Files:');
-  console.log(files);
   for(var i = 0; i < files.length; i++) {
     var obj = {
       name: files[i].name,
@@ -44,7 +42,6 @@ function addtoDB(files, db, fileCollection) {
       ext: files[i].ext,
       category: files[i].category,
     }
-    //console.log(obj);
     fileCollection.insert(obj);
   }
 };
@@ -74,7 +71,11 @@ function updateDatabase(fileList, filesDB, db, fileCollection) {
     if(addedFiles != '') {
       addtoDB(addedFiles, db, fileCollection);
     }
-    console.log('File database: Changes were made...');
+    if(addedFiles != '' && removedFiles != '') {
+      console.log('File Database: Changes were made...');
+    } else {
+      console.log('File Database: No changes necessary..')
+    }
   }
 };
 
