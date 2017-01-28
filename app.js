@@ -7,6 +7,12 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var mongodb = require('mongodb');
 var MongoClient = mongodb.MongoClient;
+var fs = require('fs');
+var path = require('path');
+var _ = require('underscore');
+
+var updateCategories = require('./libs/categoryvalidation');
+var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
 var viewCategory = require('./routes/viewcategory');
@@ -18,6 +24,7 @@ var app = express();
 
 //The location of the media which the server will look for..
 var mediaDir = "E:/Media/";
+var mediaDirBack = "E:\\Media\\"
 
 
 //set up server
@@ -28,34 +35,167 @@ var ipAddr = "192.168.1.15";
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
 
+//Used for synchronous operation, and passing values from callbacks outside.
+var categoryList = [];
+
+var fileListDB = [];
+
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
-  else if (!err) console.log('Connection established to database');
+  else if (!err) console.log('Connection established to database'); console.log('');
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
 
   //Does checks on category and file collection and logs categories that currently exist
-  validateDB(db, fileCollection, categoryCollection);
-  printCategories(db, categoryCollection);
-
-  //
+  validateDB(fileCollection, categoryCollection);
+  watchFiles(fileCollection, categoryCollection);
 });
 
-function validateDB(db, fileCollection, categoryCollection) {
+//Process for validating both category DB and file DB
+function validateDB(fileCollection, categoryCollection) {
+  validateCategories(categoryCollection);
+  validateFiles(fileCollection);
 };
 
-function printCategories(db, categoryCollection) {
+//function logic for process of validating categories
+function validateCategories(categoryCollection, sv) {
+  if (!sv) {
+    getCategoryDB(categoryCollection);
+  } else {
+    categoryValidation(categoryCollection, sv);
+    categoryList = [];
+  }
+};
+
+//function logic for process of validating files
+function validateFiles(fileCollection, filePathDB) {
+  if (!filePathDB) {
+    getFileDB(fileCollection);
+  } else {
+    fileValidation(fileCollection, filePathDB);
+
+  }
+}
+
+//Gets the current categories from actual database
+function getCategoryDB(categoryCollection) {
   categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
-    console.log('');
-    console.log("Current categories are:");
+    //console.log('');
+    //console.log("Current database categories are:");
+    categories = categories.sort();
     for (var i = 0; i < categories.length; i++) {
-      console.log(categories[i].Category);
+      //console.log(categories[i].Category);
+      categoryList.push(categories[i].Category);
     };
+    validateCategories(categoryCollection, categoryList);
+  });
+};
+
+//Gets current files from database
+function getFileDB(fileCollection) {
+  fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
+    files = files.sort();
+    var filePathDB = [];
+    for (var i = 0; i < files.length; i++) {
+      fileListDB.push({
+        name: files[i].name,
+        path: files[i].path,
+        ext: files[i].ext,
+        category: files[i].category
+      });
+      filePathDB.push(files[i].path);
+    }
+    validateFiles(fileCollection, fileListDB, filePathDB);
   });
 };
 
 
+//gets categories via actual folders in media location and validates against database
+function categoryValidation(categoryCollection, categoriesDB) {
+  fs.readdir(mediaDir, function (err, files) {
+    if (err) {
+        throw err;
+    }
+    var verifiedCategories = [];
+    //console.log('Actual Categories are:');
+    files.map(function (file) {
+        return path.join(file);
+    }).forEach(function (file) {
+        if (path.extname(file) == '') {
+          //console.log("%s", file);
+          verifiedCategories.push(file);
+        }
+    });
+    //Now to compare to the database...
+    //console.log('');
+    //console.log("Comparing and making appropriate category changes to database...")
+
+    if (verifiedCategories.sort().length == categoriesDB.sort().length && verifiedCategories.sort().every(function(u, i) {
+      return u === categoriesDB.sort()[i];
+    })) {
+      //console.log('No category changes necessary, database is up to date!');
+    } else {
+      //console.log('Category database not up to date, making database changes...');
+      updateCategories.updateDatabase(verifiedCategories, categoriesDB, categoryCollection);
+    }});
+  };
+
+//gets files via folders in media location and validates the files to database
+function fileValidation(fileCollection, filePathDB) {
+  //Find files and fill appropriate items...
+  //console.log('Actual Files are:');
+  var walk = function(dir, done) {
+    var results = [];
+    fs.readdir(dir, function(err, list) {
+      if (err) return done(err);
+      var i = 0;
+      (function next() {
+        var file = list[i++];
+        if (!file) return done(null, results);
+        file = path.resolve(dir, file);
+        fs.stat(file, function(err, stat) {
+          if (stat && stat.isDirectory()) {
+              walk(file, function(err, res) {
+              results = results.concat(res);
+              next();
+            });
+          } else {
+            var dirValues = path.parse(file).dir.split(mediaDirBack);
+            var category = dirValues[1];
+            if(category) {
+              results.push({
+                name: path.parse(file).name,
+                path: path.parse(file).dir + '\\' + path.parse(file).base,
+                ext: path.parse(file).ext,
+                category: category
+              });
+              //console.log(path.parse(file).name);
+            }
+            next();
+          }
+        });
+      })();
+    });
+  };
+  walk(mediaDir, function(err, results) {
+    if (err) throw err;
+    var fileList = results;
+    var filePathList = [];
+    for(var i = 0; i < results.length; i++) {
+      filePathList.push(results[i].path);
+    }
+    console.log('Validating files, updating file database');
+    updateFiles.updateDatabase(fileList, fileListDB, fileCollection, filePathDB, filePathList);
+
+  });
+};
+
+
+//WATCHING FILES OR CATEGORIES/DIRECTORIES
+function watchFiles(fileCollection, categoryCollection) {
+
+};
 
 //starts server on specified address
 var server = app.listen(app.get('port'), ipAddr, function() {
