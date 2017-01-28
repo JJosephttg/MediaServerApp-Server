@@ -34,7 +34,7 @@ function filesRemoved(fileList, filesDB, fileCollection) {
   return compare;
 };
 
-function addtoDB(files, db, fileCollection) {
+function addtoDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
     var obj = {
       name: files[i].name,
@@ -46,13 +46,13 @@ function addtoDB(files, db, fileCollection) {
   }
 };
 
-function removefromDB(files, db, fileCollection) {
+function removefromDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
     fileCollection.remove({"path" : files[i].path });
   }
 };
 
-function updateDatabase(fileList, filesDB, db, fileCollection) {
+function updateDatabase(fileList, filesDB, fileCollection) {
   var removedFiles = filesRemoved(fileList, filesDB, fileCollection);
   var addedFiles = filesAdded(fileList, filesDB, fileCollection);
   if (fileList == '' && filesDB != '') {
@@ -61,15 +61,15 @@ function updateDatabase(fileList, filesDB, db, fileCollection) {
     console.log('No actual files exist, deleted file database');
   } else if (filesDB == '' && fileList != '') {
     //just add the files to database
-    addtoDB(addedFiles, db, fileCollection);
+    addtoDB(addedFiles, fileCollection);
     console.log("File database up to date");
   } else if (fileList != '' && filesDB != '') {
     //add and remove files
     if(removedFiles != '') {
-      removefromDB(removedFiles, db, fileCollection);
+      removefromDB(removedFiles, fileCollection);
     }
     if(addedFiles != '') {
-      addtoDB(addedFiles, db, fileCollection);
+      addtoDB(addedFiles, fileCollection);
     }
     if(addedFiles != '' && removedFiles != '') {
       console.log('File Database: Changes were made...');

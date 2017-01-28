@@ -48,38 +48,38 @@ MongoClient.connect(url, function(err, db) {
   var categoryCollection = db.collection('categories');
 
   //Does checks on category and file collection and logs categories that currently exist
-  validateDB(db, fileCollection, categoryCollection);
-
-
+  validateDB(fileCollection, categoryCollection);
+  watchFiles(fileCollection, categoryCollection);
 });
+
 //Process for validating both category DB and file DB
-function validateDB(db, fileCollection, categoryCollection) {
-  validateCategories(db, categoryCollection);
-  validateFiles(db, fileCollection);
+function validateDB(fileCollection, categoryCollection) {
+  validateCategories(categoryCollection);
+  validateFiles(fileCollection);
 };
 
 //function logic for process of validating categories
-function validateCategories(db, categoryCollection, sv) {
+function validateCategories(categoryCollection, sv) {
   if (!sv) {
-    getCategoryDB(db, categoryCollection);
+    getCategoryDB(categoryCollection);
   } else {
-    categoryValidation(db, categoryCollection, sv);
+    categoryValidation(categoryCollection, sv);
     categoryList = [];
   }
 };
 
 //function logic for process of validating files
-function validateFiles(db, fileCollection, filePathDB) {
+function validateFiles(fileCollection, filePathDB) {
   if (!filePathDB) {
-    getFileDB(db, fileCollection);
+    getFileDB(fileCollection);
   } else {
-    fileValidation(db, fileCollection, filePathDB);
+    fileValidation(fileCollection, filePathDB);
 
   }
 }
 
 //Gets the current categories from actual database
-function getCategoryDB(db, categoryCollection) {
+function getCategoryDB(categoryCollection) {
   categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
     //console.log('');
     //console.log("Current database categories are:");
@@ -88,12 +88,12 @@ function getCategoryDB(db, categoryCollection) {
       //console.log(categories[i].Category);
       categoryList.push(categories[i].Category);
     };
-    validateCategories(db, categoryCollection, categoryList);
+    validateCategories(categoryCollection, categoryList);
   });
 };
 
 //Gets current files from database
-function getFileDB(db, fileCollection) {
+function getFileDB(fileCollection) {
   fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
     files = files.sort();
     var filePathDB = [];
@@ -106,13 +106,13 @@ function getFileDB(db, fileCollection) {
       });
       filePathDB.push(files[i].path);
     }
-    validateFiles(db, fileCollection, fileListDB, filePathDB);
+    validateFiles(fileCollection, fileListDB, filePathDB);
   });
 };
 
 
 //gets categories via actual folders in media location and validates against database
-function categoryValidation(db, categoryCollection, categoriesDB) {
+function categoryValidation(categoryCollection, categoriesDB) {
   fs.readdir(mediaDir, function (err, files) {
     if (err) {
         throw err;
@@ -137,12 +137,12 @@ function categoryValidation(db, categoryCollection, categoriesDB) {
       //console.log('No category changes necessary, database is up to date!');
     } else {
       //console.log('Category database not up to date, making database changes...');
-      updateCategories.updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection);
+      updateCategories.updateDatabase(verifiedCategories, categoriesDB, categoryCollection);
     }});
   };
 
 //gets files via folders in media location and validates the files to database
-function fileValidation(db, fileCollection, filePathDB) {
+function fileValidation(fileCollection, filePathDB) {
   //Find files and fill appropriate items...
   //console.log('Actual Files are:');
   var walk = function(dir, done) {
@@ -186,13 +186,16 @@ function fileValidation(db, fileCollection, filePathDB) {
       filePathList.push(results[i].path);
     }
     console.log('Validating files, updating file database');
-    updateFiles.updateDatabase(fileList, fileListDB, db, fileCollection, filePathDB, filePathList);
+    updateFiles.updateDatabase(fileList, fileListDB, fileCollection, filePathDB, filePathList);
 
   });
 };
 
 
+//WATCHING FILES OR CATEGORIES/DIRECTORIES
+function watchFiles(fileCollection, categoryCollection) {
 
+};
 
 //starts server on specified address
 var server = app.listen(app.get('port'), ipAddr, function() {

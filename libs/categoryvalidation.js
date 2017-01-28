@@ -21,7 +21,7 @@ function categoriesRemoved(verifiedCategories, categoriesDB) {
   return toRemove;
 };
 
-function addtoDB(categories, db, categoryCollection) {
+function addtoDB(categories, categoryCollection) {
   for(var i = 0; i < categories.length; i++) {
     var obj = {
       Category: categories[i]
@@ -30,18 +30,18 @@ function addtoDB(categories, db, categoryCollection) {
   }
 };
 
-function removefromDB(categories, db, categoryCollection) {
+function removefromDB(categories, categoryCollection) {
   for(var i = 0; i < categories.length; i++) {
     //IN THE FUTURE FOR MORE THAN ONE FIELD, JUST PASS IT THROUGH TO THIS FIELD OTHER THAN CATEGORY!
     categoryCollection.remove({ "Category" : categories[i] });
   }
 };
 
-function updateDatabase(verifiedCategories, categoriesDB, db, categoryCollection) {
+function updateDatabase(verifiedCategories, categoriesDB, categoryCollection) {
   var removedCategories = categoriesRemoved(verifiedCategories, categoriesDB);
   var addedCategories = categoriesAdded(verifiedCategories, categoriesDB);
-  addtoDB(addedCategories, db, categoryCollection);
-  removefromDB(removedCategories, db, categoryCollection);
+  addtoDB(addedCategories, categoryCollection);
+  removefromDB(removedCategories, categoryCollection);
   //console.log("Category database up to date");
 };
 
