@@ -43,7 +43,7 @@ var fileListDB = [];
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
-  else if (!err) console.log('Connection established to database');
+  else if (!err) console.log('Connection established to database'); console.log('');
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
 
@@ -64,14 +64,12 @@ function validateCategories(db, categoryCollection, sv) {
     getCategoryDB(db, categoryCollection);
   } else {
     categoryValidation(db, categoryCollection, sv);
-    //console.log('');
     categoryList = [];
   }
 };
 
 //function logic for process of validating files
 function validateFiles(db, fileCollection, filePathDB) {
-  console.log('');
   if (!filePathDB) {
     getFileDB(db, fileCollection);
   } else {
@@ -97,11 +95,9 @@ function getCategoryDB(db, categoryCollection) {
 //Gets current files from database
 function getFileDB(db, fileCollection) {
   fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
-    console.log("Current files are:");
     files = files.sort();
     var filePathDB = [];
     for (var i = 0; i < files.length; i++) {
-      console.log("%s at %s", files[i].name, files[i].path);
       fileListDB.push({
         name: files[i].name,
         path: files[i].path,
@@ -189,29 +185,9 @@ function fileValidation(db, fileCollection, filePathDB) {
     for(var i = 0; i < results.length; i++) {
       filePathList.push(results[i].path);
     }
-    function sorting(List) {
-      var isSame = List.sort(function(a, b) {
-        var nameA = a.name.toLowerCase(); // ignore upper and lowercase
-        var nameB = b.name.toLowerCase(); // ignore upper and lowercase
-        if (nameA < nameB) {
-          return -1;
-        }
-        if (nameA > nameB) {
-          return 1;
-        }
-        // names must be equal
-        return 0;
-      });
-    }
-    var fileListSorted = sorting(fileList);
-    var fileListDBSorted = sorting(fileListDB);
+    console.log('Validating files, updating file database');
+    updateFiles.updateDatabase(fileList, fileListDB, db, fileCollection, filePathDB, filePathList);
 
-    if(fileList.length == fileListDB.length ) {
-      console.log('All up to date');
-    } else {
-      console.log('Not up to date, updating file database');
-      updateFiles.updateDatabase(fileList, fileListDB, db, fileCollection, filePathDB, filePathList);
-    }
   });
 };
 
