@@ -15,7 +15,8 @@ var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
-var viewCategory = require('./routes/viewcategory');
+var categories = require('./routes/categories');
+var files = require('./routes/files');
 
 var debug = require('debug')('MediaAppServer');
 var app = express();
@@ -40,6 +41,29 @@ var categoryList = [];
 
 var fileListDB = [];
 
+//starts server on specified address
+var server = app.listen(app.get('port'), ipAddr, function() {
+    debug('API server listening on port ' + server.address().port);
+});
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
+
+// uncomment after placing your favicon in /public
+//app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+//Different URLs that client can go to for different purposes
+app.use('/', home);
+app.use('/categories/', categories);
+app.use('/files/', files);
+
+
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
@@ -50,6 +74,9 @@ MongoClient.connect(url, function(err, db) {
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
   watchFiles(fileCollection, categoryCollection);
+  //passes db variable to routes
+  
+
 });
 
 //Process for validating both category DB and file DB
@@ -197,27 +224,8 @@ function watchFiles(fileCollection, categoryCollection) {
 
 };
 
-//starts server on specified address
-var server = app.listen(app.get('port'), ipAddr, function() {
-    debug('API server listening on port ' + server.address().port);
-});
 
 
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', home);
-app.use('/category/', viewCategory);
 
 
 // catch 404 and forward to error handler

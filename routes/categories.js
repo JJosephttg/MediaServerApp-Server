@@ -1,6 +1,7 @@
 'use strict';
 var express = require('express');
 var router = express.Router();
+var databaseb = require('./mongodb');
 
 var body;
 
@@ -16,9 +17,5 @@ router.get('/:categoryName', function (req, res) {
     res.send(JSON.stringify(body));
 });
 
-
-function getFiles(category) {
-
-}
 
 module.exports = router;
