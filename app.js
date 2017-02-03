@@ -25,13 +25,17 @@ var app = express();
 
 //The location of the media which the server will look for..
 var mediaDir = "E:/Media/";
-var mediaDirBack = "E:\\Media\\"
+var mediaDirBack = "E:\\Media\\";
+
+//var mediaDir = "C:/Media/";
+//var mediaDirBack = "C:\\Media\\"
 
 
 //set up server
 app.set('port', 3000);
 //fill in here if you are using a different IP address, same for port
 var ipAddr = "192.168.1.15";
+//var ipAddr = "localhost";
 
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
@@ -41,27 +45,64 @@ var categoryList = [];
 
 var fileListDB = [];
 
-//starts server on specified address
-var server = app.listen(app.get('port'), ipAddr, function() {
-    debug('API server listening on port ' + server.address().port);
-});
+function expressInit(db, dbase, fileCollection, categoryCollection) {
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+  //starts server on specified address
+  var server = app.listen(app.get('port'), ipAddr, function() {
+      debug('API server listening on port ' + server.address().port);
+  });
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+  // view engine setup
+  app.set('views', path.join(__dirname, 'views'));
+  app.set('view engine', 'pug');
 
-//Different URLs that client can go to for different purposes
-app.use('/', home);
-app.use('/categories/', categories);
-app.use('/files/', files);
+  // uncomment after placing your favicon in /public
+  //app.use(favicon(__dirname + '/public/favicon.ico'));
+  app.use(logger('dev'));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(cookieParser());
+  app.use(express.static(path.join(__dirname, 'public')));
+
+
+  //Different URLs that client can go to for different purposes
+  app.use('/', home);
+  app.use('/categories/', categories);
+  app.use('/files/', dbase.get);
+
+  // catch 404 and forward to error handler
+  app.use(function (req, res, next) {
+      var err = new Error('Not Found');
+      err.status = 404;
+      next(err);
+  });
+
+  // error handlers
+
+  // development error handler
+  // will print stacktrace
+  if (app.get('env') === 'development') {
+      app.use(function (err, req, res, next) {
+          res.status(err.status || 500);
+          res.render('error', {
+              message: err.message,
+              error: err
+          });
+      });
+  }
+
+  // production error handler
+  // no stacktraces leaked to user
+  app.use(function (err, req, res, next) {
+      res.status(err.status || 500);
+      res.render('error', {
+          message: err.message,
+          error: {}
+      });
+  });
+};
+console.log('sup');
+
 
 
 console.log('Attempting to connect to database...');
@@ -70,12 +111,15 @@ MongoClient.connect(url, function(err, db) {
   else if (!err) console.log('Connection established to database'); console.log('');
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
-
+  var Database = require('./routes/files.js')
+    , dbase = new Database(db);
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
   watchFiles(fileCollection, categoryCollection);
   //passes db variable to routes
-  
+  expressInit(db, dbase, fileCollection, categoryCollection);
+
+
 
 });
 
@@ -228,35 +272,6 @@ function watchFiles(fileCollection, categoryCollection) {
 
 
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
 
-// error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-    app.use(function (err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
-    });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
-    });
-});
 
 module.exports = app;

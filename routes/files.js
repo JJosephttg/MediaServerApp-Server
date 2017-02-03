@@ -1,28 +1,19 @@
-'use strict';
-var express = require('express');
-var router = express.Router();
-var database = require('./mongodb');
+var database = function(db) {
+  this.db = db;
+};
+
+function getFiles(fileCollection, category) {
+
+};
 
 
-router.get('/', function (req, res) {
-
-  var body = 'hi';
+database.prototype.get = function(req, res) {
+  var db = this.db;
   res.setHeader('Content-Type', 'application/json');
-  res.write(JSON.stringify(body));
+  res.write('hi');
   res.send();
-});
+
+}
 
 
-router.post('/:category/:fileName', function(req, res) {
-  var category = req.params.category.toLowerCase();
-  var fileName = req.params.fileName;
-  res.setHeader('Content-Type', 'application/json');
-  var body = {
-      category: category,
-      file: fileName
-  }
-  res.send(JSON.stringify(body));
-});
-
-
-module.exports = router;
+module.exports = database;
