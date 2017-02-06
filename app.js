@@ -16,7 +16,6 @@ var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
 var categories = require('./routes/categories');
-var files = require('./routes/files');
 
 var debug = require('debug')('MediaAppServer');
 var app = express();
@@ -45,7 +44,7 @@ var categoryList = [];
 
 var fileListDB = [];
 
-function expressInit(db, dbase, fileCollection, categoryCollection) {
+function expressInit(db, files, fileCollection, categoryCollection) {
 
   //starts server on specified address
   var server = app.listen(app.get('port'), ipAddr, function() {
@@ -68,7 +67,7 @@ function expressInit(db, dbase, fileCollection, categoryCollection) {
   //Different URLs that client can go to for different purposes
   app.use('/', home);
   app.use('/categories/', categories);
-  app.use('/files/', dbase.get);
+  app.use('/files/', files.get.bind(files));
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
@@ -101,8 +100,6 @@ function expressInit(db, dbase, fileCollection, categoryCollection) {
       });
   });
 };
-console.log('sup');
-
 
 
 console.log('Attempting to connect to database...');
@@ -111,13 +108,13 @@ MongoClient.connect(url, function(err, db) {
   else if (!err) console.log('Connection established to database'); console.log('');
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
-  var Database = require('./routes/files.js')
-    , dbase = new Database(db);
+  var filesRoute = require('./routes/files.js')
+    , files = new filesRoute(db, fileCollection, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
   watchFiles(fileCollection, categoryCollection);
   //passes db variable to routes
-  expressInit(db, dbase, fileCollection, categoryCollection);
+  expressInit(db, files, fileCollection, categoryCollection);
 
 
 

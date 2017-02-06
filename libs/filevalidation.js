@@ -1,4 +1,8 @@
 var _ = require('underscore');
+var fs = require('fs');
+var builder = require('xmlbuilder');
+
+var a = [{"name":"myfile1","path":"E:\\Media\\files\\myfile1.pdf","ext":".pdf","category":"files"},{"name":"myfile23","path":"E:\\Media\\files\\myfile23.txt","ext":".txt","category":"files"},{"name":"New Compressed (zipped) Folder","path":"E:\\Media\\files\\New Compressed (zipped) Folder.zip","ext":".zip","category":"files"},{"name":"New Rich Text Document","path":"E:\\Media\\files\\New Rich Text Document.rtf","ext":".rtf","category":"files"},{"name":"New Text Document","path":"E:\\Media\\files\\New Text Document.txt","ext":".txt","category":"files"},{"name":"New Text Document (2)","path":"E:\\Media\\movies\\New Text Document (2).txt","ext":".txt","category":"movies"},{"name":"New Text Document (3)","path":"E:\\Media\\movies\\New Text Document (3).txt","ext":".txt","category":"movies"}]
 
 
 function compareDB(a, b){
@@ -41,6 +45,7 @@ function addtoDB(files, fileCollection) {
       path: files[i].path,
       ext: files[i].ext,
       category: files[i].category,
+      imgString: files[i].imgString
     }
     fileCollection.insert(obj);
   }
@@ -52,6 +57,30 @@ function removefromDB(files, fileCollection) {
   }
 };
 
+function convertIMGtoBase64(fileCollection, addedFiles, sv) {
+  if (!sv) {
+    var xml = builder.create('root');
+    for(var i = 0; i < addedFiles.length; i++) {
+      var item = xml.ele('file');
+      console.log(addedFiles[i].name);
+      item.att('name', addedFiles[i].name);
+      item.att('category', addedFiles[i].category);
+      item.att('path', addedFiles[i].path);
+      item.att('ext', addedFiles[i].ext);
+    }
+    fs.writeFileSync('./scripts/info/NodeFileList.xml', xml);
+    while(!fs.existsSync('./scripts/info/IconFileList.xml')) {
+    }
+    var sv = true;
+    convertIMGtoBase64(fileCollection, addedFiles, sv);
+  } else if (sv == true) {
+    var fileIconList = fs.readFileSync('./scripts/info/IconFileList.xml');
+
+
+  }
+
+};
+
 function updateDatabase(fileList, filesDB, fileCollection) {
   var removedFiles = filesRemoved(fileList, filesDB, fileCollection);
   var addedFiles = filesAdded(fileList, filesDB, fileCollection);
@@ -61,6 +90,7 @@ function updateDatabase(fileList, filesDB, fileCollection) {
     console.log('No actual files exist, deleted file database');
   } else if (filesDB == '' && fileList != '') {
     //just add the files to database
+    addedFiles = convertIMGtoBase64(fileCollection, addedFiles);
     addtoDB(addedFiles, fileCollection);
     console.log("File database up to date");
   } else if (fileList != '' && filesDB != '') {
@@ -69,9 +99,10 @@ function updateDatabase(fileList, filesDB, fileCollection) {
       removefromDB(removedFiles, fileCollection);
     }
     if(addedFiles != '') {
-      addtoDB(addedFiles, fileCollection);
+      var imgString = convertIMGtoBase64(fileCollection, addedFiles);
+      addtoDB(addedFiles, fileCollection, imgString);
     }
-    if(addedFiles != '' && removedFiles != '') {
+    if(addedFiles != '' | removedFiles != '') {
       console.log('File Database: Changes were made...');
     } else {
       console.log('File Database: No changes necessary..')
