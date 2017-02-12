@@ -23,8 +23,16 @@ var app = express();
 
 
 //The location of the media which the server will look for..
-var mediaDir = "E:/Media/";
-var mediaDirBack = "E:\\Media\\";
+var dirs = {
+  mediaDir: "E:/Media/",
+  mediaDirBack: "E:\\Media\\",
+  mediaIMGLoc: "E:/MediaIcons/",
+  mediaIMGLocBack: "E:\\MediaIcons\\",
+  root: "E:/",
+  rootBack: "E:\\"
+}
+
+
 
 //var mediaDir = "C:/Media/";
 //var mediaDirBack = "C:\\Media\\"
@@ -112,7 +120,6 @@ MongoClient.connect(url, function(err, db) {
     , files = new filesRoute(db, fileCollection, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
-  watchFiles(fileCollection, categoryCollection);
   //passes db variable to routes
   expressInit(db, files, fileCollection, categoryCollection);
 
@@ -181,7 +188,7 @@ function getFileDB(fileCollection) {
 
 //gets categories via actual folders in media location and validates against database
 function categoryValidation(categoryCollection, categoriesDB) {
-  fs.readdir(mediaDir, function (err, files) {
+  fs.readdir(dirs.mediaDir, function (err, files) {
     if (err) {
         throw err;
     }
@@ -229,7 +236,7 @@ function fileValidation(fileCollection, filePathDB) {
               next();
             });
           } else {
-            var dirValues = path.parse(file).dir.split(mediaDirBack);
+            var dirValues = path.parse(file).dir.split(dirs.mediaDirBack);
             var category = dirValues[1];
             if(category) {
               results.push({
@@ -246,7 +253,7 @@ function fileValidation(fileCollection, filePathDB) {
       })();
     });
   };
-  walk(mediaDir, function(err, results) {
+  walk(dirs.mediaDir, function(err, results) {
     if (err) throw err;
     var fileList = results;
     var filePathList = [];
@@ -260,15 +267,13 @@ function fileValidation(fileCollection, filePathDB) {
 };
 
 
-//WATCHING FILES OR CATEGORIES/DIRECTORIES
-function watchFiles(fileCollection, categoryCollection) {
-
-};
 
 
 
 
 
 
-
-module.exports = app;
+module.exports = {
+  app: app,
+  dirs: dirs
+}
