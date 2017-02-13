@@ -39,7 +39,7 @@ var dirs = {
 
 
 //set up server
-app.set('port', 3000);
+app.set('port', 8000);
 //fill in here if you are using a different IP address, same for port
 var ipAddr = "192.168.1.15";
 //var ipAddr = "localhost";
@@ -75,7 +75,7 @@ function expressInit(db, files, fileCollection, categoryCollection) {
   //Different URLs that client can go to for different purposes
   app.use('/', home);
   app.use('/categories/', categories);
-  app.use('/files/', files.get.bind(files));
+  app.use('/:category/', files.get.bind(files));
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
