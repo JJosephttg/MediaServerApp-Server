@@ -15,7 +15,6 @@ var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
-var categories = require('./routes/categories');
 
 var debug = require('debug')('MediaAppServer');
 var app = express();
@@ -52,7 +51,7 @@ var categoryList = [];
 
 var fileListDB = [];
 
-function expressInit(db, files, fileCollection, categoryCollection) {
+function expressInit(db, files, fileCollection, categoryCollection, categories) {
 
   //starts server on specified address
   var server = app.listen(app.get('port'), ipAddr, function() {
@@ -74,7 +73,7 @@ function expressInit(db, files, fileCollection, categoryCollection) {
 
   //Different URLs that client can go to for different purposes
   app.use('/', home);
-  app.use('/categories/', categories);
+  app.use('/categories/', categories.get.bind(categories));
   app.use('/:category/', files.get.bind(files));
 
   // catch 404 and forward to error handler
@@ -118,10 +117,12 @@ MongoClient.connect(url, function(err, db) {
   var categoryCollection = db.collection('categories');
   var filesRoute = require('./routes/files.js')
     , files = new filesRoute(db, fileCollection, categoryCollection);
+  var categoriesRoute = require('./routes/categories.js')
+    , categories = new categoriesRoute(db, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
   //passes db variable to routes
-  expressInit(db, files, fileCollection, categoryCollection);
+  expressInit(db, files, fileCollection, categoryCollection, categories);
 
 
 
