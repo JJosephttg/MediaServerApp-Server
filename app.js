@@ -74,7 +74,9 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
   //Different URLs that client can go to for different purposes
   app.use('/', home);
   app.use('/categories/', categories.get.bind(categories));
+  app.use('/fileicons/:iconname/', files.getIcons.bind(files));
   app.use('/:category/', files.get.bind(files));
+
 
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
@@ -116,7 +118,7 @@ MongoClient.connect(url, function(err, db) {
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
   var filesRoute = require('./routes/files.js')
-    , files = new filesRoute(db, fileCollection, categoryCollection);
+    , files = new filesRoute(db, fileCollection, categoryCollection, dirs);
   var categoriesRoute = require('./routes/categories.js')
     , categories = new categoriesRoute(db, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
