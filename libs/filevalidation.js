@@ -94,7 +94,6 @@ function updateDatabase(fileList, filesDB, fileCollection) {
     //just add the files to database
     addedFiles = getThumbnail(fileCollection, addedFiles);
     addtoDB(addedFiles, fileCollection);
-    console.log("File database up to date");
   } else if (fileList != '' && filesDB != '') {
     //add and remove files
     if(removedFiles != '') {
@@ -113,6 +112,7 @@ function updateDatabase(fileList, filesDB, fileCollection) {
   else if (fileList == '' && filesDB == '') {
     console.log('File Database: No changes necessary..');
   }
+  console.log("File database up to date")
 };
 
 exports.updateDatabase = updateDatabase;
