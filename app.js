@@ -15,7 +15,6 @@ var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
 
 var home = require('./routes/index');
-var viewCategory = require('./routes/viewcategory');
 
 var debug = require('debug')('MediaAppServer');
 var app = express();
@@ -23,14 +22,27 @@ var app = express();
 
 
 //The location of the media which the server will look for..
-var mediaDir = "E:/Media/";
-var mediaDirBack = "E:\\Media\\"
+var dirs = {
+  mediaDir: process.argv[3].replace("\\", "/"),
+  mediaDirBack: process.argv[3].replace("\\\\", "\\"),
+  mediaIMGLoc: "E:/MediaIcons/",
+  mediaIMGLocBack: "E:\\MediaIcons\\",
+  root: "E:/",
+  rootBack: "E:\\"
+}
+
+console.log(dirs.mediaDirBack);
+
+//var mediaDir = "C:/Media/";
+//var mediaDirBack = "C:\\Media\\"
 
 
 //set up server
-app.set('port', 3000);
+app.set('port', 8000);
 //fill in here if you are using a different IP address, same for port
-var ipAddr = "192.168.1.15";
+var ipAddr = process.argv[2];
+console.log(process.argv[3]);
+//var ipAddr = "localhost";
 
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
@@ -40,16 +52,83 @@ var categoryList = [];
 
 var fileListDB = [];
 
+function expressInit(db, files, fileCollection, categoryCollection, categories) {
+
+  //starts server on specified address
+  var server = app.listen(app.get('port'), ipAddr, function() {
+      debug('API server listening on port ' + server.address().port);
+  });
+
+  // view engine setup
+  app.set('views', path.join(__dirname, 'views'));
+  app.set('view engine', 'pug');
+
+  // uncomment after placing your favicon in /public
+  //app.use(favicon(__dirname + '/public/favicon.ico'));
+  app.use(logger('dev'));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(cookieParser());
+  app.use(express.static(path.join(__dirname, 'public')));
+
+
+  //Different URLs that client can go to for different purposes
+  app.use('/', home);
+  app.use('/categories/', categories.get.bind(categories));
+  app.use('/fileicons/:iconname/', files.getIcons.bind(files));
+  app.use('/:category/', files.get.bind(files));
+
+
+  // catch 404 and forward to error handler
+  app.use(function (req, res, next) {
+      var err = new Error('Not Found');
+      err.status = 404;
+      next(err);
+  });
+
+  // error handlers
+
+  // development error handler
+  // will print stacktrace
+  if (app.get('env') === 'development') {
+      app.use(function (err, req, res, next) {
+          res.status(err.status || 500);
+          res.render('error', {
+              message: err.message,
+              error: err
+          });
+      });
+  }
+
+  // production error handler
+  // no stacktraces leaked to user
+  app.use(function (err, req, res, next) {
+      res.status(err.status || 500);
+      res.render('error', {
+          message: err.message,
+          error: {}
+      });
+  });
+};
+
+
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
   else if (!err) console.log('Connection established to database'); console.log('');
   var fileCollection = db.collection('files');
   var categoryCollection = db.collection('categories');
-
+  var filesRoute = require('./routes/files.js')
+    , files = new filesRoute(db, fileCollection, categoryCollection, dirs);
+  var categoriesRoute = require('./routes/categories.js')
+    , categories = new categoriesRoute(db, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
   validateDB(fileCollection, categoryCollection);
-  watchFiles(fileCollection, categoryCollection);
+  //passes db variable to routes
+  expressInit(db, files, fileCollection, categoryCollection, categories);
+
+
+
 });
 
 //Process for validating both category DB and file DB
@@ -113,7 +192,7 @@ function getFileDB(fileCollection) {
 
 //gets categories via actual folders in media location and validates against database
 function categoryValidation(categoryCollection, categoriesDB) {
-  fs.readdir(mediaDir, function (err, files) {
+  fs.readdir(dirs.mediaDir, function (err, files) {
     if (err) {
         throw err;
     }
@@ -161,7 +240,7 @@ function fileValidation(fileCollection, filePathDB) {
               next();
             });
           } else {
-            var dirValues = path.parse(file).dir.split(mediaDirBack);
+            var dirValues = path.parse(file).dir.split(dirs.mediaDirBack);
             var category = dirValues[1];
             if(category) {
               results.push({
@@ -178,7 +257,7 @@ function fileValidation(fileCollection, filePathDB) {
       })();
     });
   };
-  walk(mediaDir, function(err, results) {
+  walk(dirs.mediaDir, function(err, results) {
     if (err) throw err;
     var fileList = results;
     var filePathList = [];
@@ -192,63 +271,13 @@ function fileValidation(fileCollection, filePathDB) {
 };
 
 
-//WATCHING FILES OR CATEGORIES/DIRECTORIES
-function watchFiles(fileCollection, categoryCollection) {
-
-};
-
-//starts server on specified address
-var server = app.listen(app.get('port'), ipAddr, function() {
-    debug('API server listening on port ' + server.address().port);
-});
 
 
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use('/', home);
-app.use('/category/', viewCategory);
 
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
 
-// error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-    app.use(function (err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
-    });
+module.exports = {
+  app: app,
+  dirs: dirs
 }
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {}
-    });
-});
-
-module.exports = app;

@@ -1,5 +1,6 @@
 var _ = require('underscore');
-
+var fs = require('fs');
+var builder = require('xmlbuilder');
 
 function compareDB(a, b){
   //for files added: a = fileList being compared to b = filesDB
@@ -41,6 +42,7 @@ function addtoDB(files, fileCollection) {
       path: files[i].path,
       ext: files[i].ext,
       category: files[i].category,
+      imgLoc: files[i].imgLoc
     }
     fileCollection.insert(obj);
   }
@@ -49,34 +51,68 @@ function addtoDB(files, fileCollection) {
 function removefromDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
     fileCollection.remove({"path" : files[i].path });
+    var dirs = require('../app').dirs;
+    var imgPath = dirs.mediaIMGLocBack + files[i].category + '-' + files[i].name + files[i].ext + '.bmp';
+    fs.unlinkSync(imgPath);
   }
 };
 
+function getThumbnail(fileCollection, addedFiles) {
+  var xml = builder.create('root');
+  for(var i = 0; i < addedFiles.length; i++) {
+    var item = xml.ele('file');
+    console.log(addedFiles[i].name);
+    item.att('name', addedFiles[i].name);
+    item.att('category', addedFiles[i].category);
+    item.att('path', addedFiles[i].path);
+    item.att('ext', addedFiles[i].ext);
+  }
+  fs.writeFileSync('./scripts/info/NodeFileList.xml', xml);
+  while(!fs.existsSync('./scripts/info/AddedFiles.json')) {
+  }
+  while(fs.existsSync('./scripts/info/AddedFiles.json')) {
+    try {
+      var fileIconList = JSON.parse(fs.readFileSync('./scripts/info/AddedFiles.json'));
+      break;
+    } catch (err) {}
+  }
+  fs.unlinkSync('./scripts/info/AddedFiles.json');
+  return fileIconList;
+
+};
+
 function updateDatabase(fileList, filesDB, fileCollection) {
+  var dirs = require('../app').dirs;
   var removedFiles = filesRemoved(fileList, filesDB, fileCollection);
   var addedFiles = filesAdded(fileList, filesDB, fileCollection);
   if (fileList == '' && filesDB != '') {
     //delete all from collection
     fileCollection.remove({});
+    fs.mkdirSync(dirs.rootBack + "delete");
     console.log('No actual files exist, deleted file database');
   } else if (filesDB == '' && fileList != '') {
     //just add the files to database
+    addedFiles = getThumbnail(fileCollection, addedFiles);
     addtoDB(addedFiles, fileCollection);
-    console.log("File database up to date");
   } else if (fileList != '' && filesDB != '') {
     //add and remove files
     if(removedFiles != '') {
       removefromDB(removedFiles, fileCollection);
     }
     if(addedFiles != '') {
+      addedFiles = getThumbnail(fileCollection, addedFiles);
       addtoDB(addedFiles, fileCollection);
     }
-    if(addedFiles != '' && removedFiles != '') {
+    if(addedFiles != '' | removedFiles != '') {
       console.log('File Database: Changes were made...');
     } else {
       console.log('File Database: No changes necessary..')
     }
   }
+  else if (fileList == '' && filesDB == '') {
+    console.log('File Database: No changes necessary..');
+  }
+  console.log("File database up to date")
 };
 
 exports.updateDatabase = updateDatabase;
