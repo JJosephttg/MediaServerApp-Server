@@ -1,4 +1,5 @@
 var fs = require('fs');
+var url = require('url');
 
 var files = function(db, fileCollection, categoryCollection, dirs) {
   this.db = db;
@@ -58,5 +59,35 @@ files.prototype.getIcons = function(req, res) {
 
 }
 
+files.prototype.downloadFile = function(req, res) {
+  var dirs = this.dirs;
+  console.log(req.params.file);
+
+  var path = req.params.file.replaceAll('\\|', '/');
+  var pathDiv = path.split('/');
+  fileName = pathDiv[pathDiv.length-1]
+
+  console.log(path);
+  try {
+    path.split(dirs.mediaDir);
+  } catch (error) {
+    res.status(404);
+    res.end();
+    return;
+  }
+  if (fs.existsSync(path)) {
+    res.setHeader('Content-disposition', 'attachment; filename=' + fileName);
+    res.download(path, fileName);
+    res.end();
+  } else {
+    res.status(401);
+    res.end();
+  }
+}
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};
 
 module.exports = files;

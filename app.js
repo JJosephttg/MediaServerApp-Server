@@ -74,9 +74,11 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
 
   //Different URLs that client can go to for different purposes
   app.use('/', home);
+  app.use('/download/:file', files.downloadFile.bind(files));
   app.use('/categories/', categories.get.bind(categories));
   app.use('/fileicons/:iconname/', files.getIcons.bind(files));
   app.use('/:category/', files.get.bind(files));
+
 
 
   // catch 404 and forward to error handler
