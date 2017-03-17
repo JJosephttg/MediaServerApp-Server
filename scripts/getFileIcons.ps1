@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 
-cd D:/Dev/MediaAppServer/API/scripts
+cd C:/Dev/MediaAppServer/API/scripts
 
 Add-Type -AssemblyName System.Drawing
 
@@ -11,7 +11,7 @@ Import-Module ..\dll\Microsoft.WindowsAPICodePack.dll
 Import-Module ..\dll\Microsoft.WindowsAPICodePack.Shell.dll
 
 #Temp directory
-$root = 'E:\'
+$root = 'C:\'
 
 #Function to convert to json with the image path for both if length is greater OR equal to 1, and then appends the list to a file called AddedFiles.json
 function Update-List($fileList) {
