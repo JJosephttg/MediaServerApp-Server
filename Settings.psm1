@@ -47,4 +47,24 @@ function Get-Settings($SettingsFile)
     $settings
 }
 
-Export-ModuleMember Get-Settings
+function Set-Settings($SettingsFile, $Settings) {
+    Set-Content $SettingsFile $null
+    foreach($category in $Settings.Keys) {
+        if ($category -ne "0") {
+            Add-Content $SettingsFile "[${category}]"
+            foreach ($setting in $Settings.Item($category).GetEnumerator()) {
+                $value = $setting.Value
+                $key = $setting.Name
+                
+                $settingFormat = "${key}=" + '"' + ${value} + '"'
+                Add-Content $SettingsFile $settingFormat
+               
+            }
+            
+        }
+        
+    }
+    
+}
+
+Export-ModuleMember Get-Settings, Set-Settings

@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
-function Start-Server($ipAddr, $mediaDir) {
-    Invoke-Command -ScriptBlock{nodemon -i .\scripts\info app.js $ipAddr $mediaDir -w ..\API}
+function Start-Server($mediaDir, $mediaIconDir) {
+    Write-Host "Starting node server"
+    Invoke-Command -ScriptBlock{nodemon -i .\scripts\info app.js $mediaDir $mediaIconDir -w ..\}
     for ($true) {
     }
 }
@@ -20,25 +21,34 @@ try {
 
 
     if ($defaultRes -eq "y") {
-        $ipAddr = $Settings.Default.IPAddress
         $mediaDir = $Settings.Default.MediaDir
+        $mediaIconDir = $Settings.Default.MediaIconDir
         Start-Job -FilePath $script
 
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
-        Start-Server -ipAddr $ipAddr -mediaDir $mediaDir
+        Start-Server -mediaDir $mediaDir -mediaIconDir $mediaIconDir
 
     } elseif ($defaultRes -eq "n") {
-        $ipAddr = Read-Host -Prompt "IP Address"
         $mediaDir = Read-Host -Prompt "Media Directory (backslash only)"
+        $mediaIconDir = Read-Host -Prompt "Media Icons Directory (backslash only)"
+
+        $newConfig = Read-Host -Prompt "Would you like to save these settings as default? (y or n)"
+
+        if ($newConfig -eq "y") {
+            $Settings.Default.MediaDir = $mediaDir
+            $Settings.Default.MediaIconDir = $mediaIconDir
+
+            Set-Settings settings.txt $Settings
+        }
 
         Start-Job -FilePath $script
 
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
-        Start-Server -ipAddr $ipAddr -mediaDir $mediaDir
+        Start-Server -mediaDir $mediaDir  -mediaDir $mediaIconDir
     }
 } catch {}
 

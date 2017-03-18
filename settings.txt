@@ -1,4 +1,3 @@
 [Default]
-IPAddress="10.170.75.188"
-MediaDir="C:\Media\"
-MediaIconDir="C:\MediaIcons\"
+MediaIconDir="C:\Media\"
+MediaDir="C:\MediaIcons\"
