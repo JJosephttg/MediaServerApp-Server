@@ -1,6 +1,6 @@
 # MediaAppServer
 
-# To Run The Server:
+## To Run The Server:
 
 First, install mongodb (Dont change directory), and create the required C:/data/db directory
 
