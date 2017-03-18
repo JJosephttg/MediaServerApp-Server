@@ -48,7 +48,7 @@ try {
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
-        Start-Server -mediaDir $mediaDir  -mediaDir $mediaIconDir
+        Start-Server -mediaDir $mediaDir  -mediaIconDir $mediaIconDir
     }
 } catch {}
 
