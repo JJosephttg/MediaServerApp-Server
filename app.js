@@ -23,25 +23,21 @@ var app = express();
 
 //The location of the media which the server will look for..
 var dirs = {
-  mediaDir: process.argv[3].replace("\\", "/"),
-  mediaDirBack: process.argv[3].replace("\\\\", "\\"),
-  mediaIMGLoc: "E:/MediaIcons/",
-  mediaIMGLocBack: "E:\\MediaIcons\\",
-  root: "E:/",
-  rootBack: "E:\\"
+  mediaDir: process.argv[2].replace("\\", "/"),
+  mediaDirBack: process.argv[2].replace("\\\\", "\\"),
+  mediaIMGLoc: process.argv[3].replace("\\", "/"),
+  mediaIMGLocBack: process.argv[3].replace("\\\\", "\\"),
+  root: process.argv[2].split(":")[0] + ":/",
+  rootBack: process.argv[2].split(":")[0] + ":\\"
 }
 
-console.log(dirs.mediaDirBack);
-
-//var mediaDir = "C:/Media/";
-//var mediaDirBack = "C:\\Media\\"
 
 
 //set up server
 app.set('port', 8000);
 //fill in here if you are using a different IP address, same for port
-var ipAddr = process.argv[2];
-console.log(process.argv[3]);
+var ipAddr = "0.0.0.0";
+
 //var ipAddr = "localhost";
 
 //Same for mongodb
