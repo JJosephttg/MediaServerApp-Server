@@ -19,8 +19,16 @@ var home = require('./routes/index');
 var debug = require('debug')('MediaAppServer');
 var app = express();
 
+if (!endsWith(process.argv[2], "\\")) {
+  process.argv[2] = process.argv[2] + "\\"
+}
+if (!endsWith(process.argv[3], "\\")) {
+  process.argv[3] = process.argv[3] + "\\"
+}
 
-
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
 //The location of the media which the server will look for..
 var dirs = {
   mediaDir: process.argv[2].replace("\\", "/"),

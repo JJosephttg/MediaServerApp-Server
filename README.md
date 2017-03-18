@@ -1,14 +1,15 @@
 ﻿# MediaAppServer
-Some modules are not in package.json. Just load the ones in the json, and any other module declarations in the app.js
+​
+# To Run The Server:
 
+First, install mongodb (Dont change directory), and create the required C:/data/db directory
 
-# Run Server:
+Then install nodejs and make sure you install all the modules by using cmd, and going into the directory of the server and typing "npm install"
 
-First, install mongodb, and create the required C:/data/db directory (something like that)
+Then install nodemon by typing "npm install -g nodemon" 
 
-Then install nodejs and make sure you install all the modules
+Finally create a Media directory in the root of a drive and a MediaIcons directory and run the runserver.ps1 with powershell and say n to manually configure the server settings. But before doing so, make sure there is a settings.txt in the same directory.... You can also manually edit the settings file and just swap the values.
 
-Finally create a Media directory in the root of a drive and a MediaIcons directory and change the directories accordingly in app.js and run the runserver.ps1 with powershell and say n to manually configure the server settings.
-
+Also if you edit the config, ONLY USE BACKSLASHES IN THE DIRECTORIES. (Will be fixed hopefully soon)
 
 By the way, I recommend for using the server to use the latest branch: View-Files-Client
