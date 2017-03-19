@@ -78,6 +78,7 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
 
   //Different URLs that client can go to for different purposes
   app.use('/', home);
+  app.use('/upload/:category', files.uploadFile.bind(files));
   app.use('/download/:file', files.downloadFile.bind(files));
   app.use('/categories/', categories.get.bind(categories));
   app.use('/fileicons/:iconname/', files.getIcons.bind(files));
