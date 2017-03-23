@@ -11,6 +11,7 @@ try {
     cd $PSScriptRoot
 
     Import-Module .\Settings.psm1 -Force
+    Import-Module .\scripts\getFileIcons.psm1 -Force
 
     $Settings = Get-Settings "./settings.txt" -Force
 
@@ -23,8 +24,8 @@ try {
     if ($defaultRes -eq "y") {
         $mediaDir = $Settings.Default.MediaDir
         $mediaIconDir = $Settings.Default.MediaIconDir
-        Start-Job -FilePath $script
-
+        
+        Start-Job -ScriptBlock{param($mediaIconDir)Import-Module .\scripts\getFileIcons.psm1 -Force; Get-FileIcons -mediaIconDir $mediaIconDir} -ArgumentList $mediaIconDir
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
@@ -42,15 +43,15 @@ try {
 
             Set-Settings settings.txt $Settings
         }
-
-        Start-Job -FilePath $script
+        Start-Job -ScriptBlock{${functionGet-FileIcons -mediaIconDir $mediaIconDir}}
+        #Start-Job -ScriptBlock {param($Settings)./scripts/getFileIcons.ps1 $Settings.Default.MediaDir} -ArgumentList $Settings
 
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
         Start-Server -mediaDir $mediaDir  -mediaIconDir $mediaIconDir
     }
-} catch {}
+} catch {throw $_}
 
 finally {
     Stop-Job *

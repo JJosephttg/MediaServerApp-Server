@@ -70,13 +70,15 @@ function getThumbnail(fileCollection, addedFiles) {
   fs.writeFileSync('./scripts/info/NodeFileList.xml', xml);
   while(!fs.existsSync('./scripts/info/AddedFiles.json')) {
   }
+
   while(fs.existsSync('./scripts/info/AddedFiles.json')) {
     try {
       var fileIconList = JSON.parse(fs.readFileSync('./scripts/info/AddedFiles.json'));
       break;
-    } catch (err) {}
+    } catch (err) {console.log(err);}
   }
   fs.unlinkSync('./scripts/info/AddedFiles.json');
+
   return fileIconList;
 
 };
@@ -92,8 +94,10 @@ function updateDatabase(fileList, filesDB, fileCollection) {
     console.log('No actual files exist, deleted file database');
   } else if (filesDB == '' && fileList != '') {
     //just add the files to database
+
     addedFiles = getThumbnail(fileCollection, addedFiles);
     addtoDB(addedFiles, fileCollection);
+
   } else if (fileList != '' && filesDB != '') {
     //add and remove files
     if(removedFiles != '') {
