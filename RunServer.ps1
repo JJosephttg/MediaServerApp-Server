@@ -1,6 +1,7 @@
 #The purpose of this script is to make the running and changing of server settings much easier. Since there are multiple files that have to be run, I wanted to make a single file that does all of that plus allow you to change server settings.
 
 $ErrorActionPreference = "Stop"
+
 #Takes the media directories that the user specifies and runs the main server.
 function Start-Server($mediaDir, $mediaIconDir) {
     Write-Host "Starting node server"
@@ -18,10 +19,14 @@ try {
     $Settings = Get-Settings "./settings.txt" -Force #function to read from a settings.txt and format them into a dictionary/object with keys and values.
 
     $defaultRes = Read-Host -Prompt "Default Configuration (y or n)?" #Reads response from user
-
-    for ($defaultRes.ToLower() -ne "y" -or $defaultRes.ToLower() -ne "n") { #Repeats until the user replies with y or n
-        $defaultRes = Read-Host -Prompt "Default Configuration (y or n)?"
-    } 
+    if ($defaultRes.ToLower() -ne "y" -and $defaultRes.ToLower() -ne "n") {
+        for ($defaultRes.ToLower() -ne "y" -and $defaultRes.ToLower() -ne "n") { #Repeats until the user replies with y or n
+            $defaultRes = Read-Host -Prompt "Default Configuration (y or n)?"
+            if($defaultRes.ToLower() -eq "y" -or $defaultRes.ToLower() -eq "n") {
+                break
+            }
+        }
+    }
 
     $script = "./scripts/getFileIcons.ps1"
     $mongoScript = "C:\Program Files\MongoDB\Server\3.4\bin\mongod.exe"
@@ -50,8 +55,6 @@ try {
             Set-Settings settings.txt $Settings
         }
         Start-Job -ScriptBlock{${functionGet-FileIcons -mediaIconDir $mediaIconDir}} #After saving or not saving the settings, it starts the server and its components (Note to self, I will have to put these in functions as I repeated this twice)
-        #Start-Job -ScriptBlock {param($Settings)./scripts/getFileIcons.ps1 $Settings.Default.MediaDir} -ArgumentList $Settings
-
         
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3

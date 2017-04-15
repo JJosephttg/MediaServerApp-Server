@@ -4,7 +4,7 @@
 
 #This function below grabs the icons from a list of files that the server provides, and saves them as an image in a separate directory that the user provided when starting the server
 
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 
 function Get-FileIcons($mediaIconDir) {
     $root = $mediaIconDir[0]
