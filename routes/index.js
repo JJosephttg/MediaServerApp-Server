@@ -1,3 +1,5 @@
+//Self explanatory: Home page Route handler...
+
 ﻿'use strict';
 var express = require('express');
 var router = express.Router();
