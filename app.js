@@ -88,6 +88,7 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
   //Different URLs that client can go to for different purposes
   //The first argument is the url, and the second argument is the function/route handler that gets called when a user makes the request to the specified url. In this case, I have a class method I call for each
   app.use('/', home);
+  app.use('/upload/:category', files.uploadFile.bind(files));
   app.use('/download/:file', files.downloadFile.bind(files));
   app.use('/categories/', categories.get.bind(categories));
   app.use('/fileicons/:iconname/', files.getIcons.bind(files));

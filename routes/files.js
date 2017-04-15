@@ -92,7 +92,6 @@ files.prototype.downloadFile = function(req, res) {
   }
 }
 
-//Algorithm that can be used to replace all instances of a character, rather than just replacing a single instance...
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
