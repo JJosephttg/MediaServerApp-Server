@@ -2,6 +2,7 @@ var _ = require('underscore');
 var fs = require('fs');
 var builder = require('xmlbuilder');
 
+//Does same comparison as categories, however, there are some differences between categories and files...
 function compareDB(a, b){
   //for files added: a = fileList being compared to b = filesDB
   //for files removed: a = filesDB being compared to b = fileList
@@ -24,17 +25,18 @@ function compareDB(a, b){
     return not_in_a
   }
 };
-
+//same as categories
 function filesAdded(fileList, filesDB, fileCollection) {
   var compare = compareDB(fileList, filesDB);
   return compare;
 };
-
+//same as above but opposite way
 function filesRemoved(fileList, filesDB, fileCollection) {
   var compare = compareDB(filesDB, fileList);
   return compare;
 };
 
+//Adds to file collection the files that need to be added to database
 function addtoDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
     var obj = {
@@ -47,7 +49,7 @@ function addtoDB(files, fileCollection) {
     fileCollection.insert(obj);
   }
 };
-
+//Same as above, but removing files
 function removefromDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
     fileCollection.remove({"path" : files[i].path });
@@ -56,7 +58,7 @@ function removefromDB(files, fileCollection) {
     fs.unlinkSync(imgPath);
   }
 };
-
+//Gets the thumbnail location and gives the signal to a powershell script that a file has been added and or removed and the powershell script deletes the removed file's icons, and retrieves the icon from added file..
 function getThumbnail(fileCollection, addedFiles) {
   var xml = builder.create('root');
   for(var i = 0; i < addedFiles.length; i++) {
@@ -82,7 +84,7 @@ function getThumbnail(fileCollection, addedFiles) {
   return fileIconList;
 
 };
-
+//updates the database through the functions that add and remove files that it detects that weren't there before.. (This is the main function)
 function updateDatabase(fileList, filesDB, fileCollection) {
   var dirs = require('../app').dirs;
   var removedFiles = filesRemoved(fileList, filesDB, fileCollection);

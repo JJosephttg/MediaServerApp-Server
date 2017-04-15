@@ -1,3 +1,9 @@
+#A powershell module (just a file with functions in it that can be called from other scripts)
+
+#This function below is called by the master script: RunServer.ps1
+
+#This function below grabs the icons from a list of files that the server provides, and saves them as an image in a separate directory that the user provided when starting the server
+
 ﻿$ErrorActionPreference = 'Stop'
 
 function Get-FileIcons($mediaIconDir) {
@@ -27,7 +33,7 @@ function Get-FileIcons($mediaIconDir) {
         $isToBeDeleted = Test-Path $deleteFolder
         if ($isToBeDeleted -eq $true) {
             Remove-Item $mediaIconFolder -Recurse -Force
-            Rename-Item $deleteFolder -NewName $mediaIconFolder 
+            Rename-Item $deleteFolder -NewName $mediaIconFolder
         }
         if ($addedFiles) {
             #if only one item, do logic for that item (Length property doesn't work when there is only one...)
@@ -44,12 +50,12 @@ function Get-FileIcons($mediaIconDir) {
                 $addedFiles.root.file.setAttribute('imgLoc', $imgPath)
                 Update-List -fileList $addedFiles
 
-            #Otherwise, if more than one file, go through each and do necessary steps...     
+            #Otherwise, if more than one file, go through each and do necessary steps...
             } else {
                 Write-Host 'more than 1 item'
                 $addedFiles.root.file.length
                 for ($i = 0; $i -lt $addedFiles.root.file.Length; $i++) {
-                
+
                     [System.Windows.Media.Imaging.BitmapSource] $iconSrc = [Microsoft.WindowsAPICodePack.Shell.ShellFile]::FromFilePath($addedFiles.root.file[$i].path).Thumbnail.BitmapSource
                     $srcMemoryStream = New-Object System.IO.MemoryStream
                     $enc = New-Object System.Windows.Media.Imaging.BmpBitmapEncoder

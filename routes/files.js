@@ -1,6 +1,10 @@
+//Used to manage routes related to reading or modifying files
+
+//imports library fs, and url
 var fs = require('fs');
 var url = require('url');
 
+//prototype created that has some attributes (you can consider prototypes as classes)
 var files = function(db, fileCollection, categoryCollection, dirs) {
   this.db = db;
   this.fileCollection = fileCollection;
@@ -8,7 +12,7 @@ var files = function(db, fileCollection, categoryCollection, dirs) {
   this.dirs = dirs;
 };
 
-
+//Get request for retreiving files from database based on the category... If the category is all, it will send a response with all the files from all categories
 files.prototype.get = function(req, res) {
   var db = this.db;
   var fileCollection = this.fileCollection;
@@ -46,6 +50,7 @@ files.prototype.get = function(req, res) {
   }
 }
 
+//Used to get the icons associated with files... This has to be a separate request as you cannot have 2 different content types in a response....
 files.prototype.getIcons = function(req, res) {
   var dirs = this.dirs;
   var filePath = dirs.mediaIMGLoc + req.params.iconname + '.bmp';
@@ -59,6 +64,8 @@ files.prototype.getIcons = function(req, res) {
 
 }
 
+//Used to serve the files to client. When the download button is clicked client side, the server gets a request with the file name, category, and extension within the url... it can then find the file and respond
+//with it....
 files.prototype.downloadFile = function(req, res) {
   var dirs = this.dirs;
   console.log(req.params.file);
@@ -85,9 +92,10 @@ files.prototype.downloadFile = function(req, res) {
   }
 }
 
+//Algorithm that can be used to replace all instances of a character, rather than just replacing a single instance...
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
 };
-
+//exports the class/prototype
 module.exports = files;

@@ -1,4 +1,6 @@
-﻿'use strict';
+//App.js is the "master script"/controller of everything. The server starts with this script....
+'use strict';
+//all the libraries that are needed
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -11,25 +13,30 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 
+//importing my own custom modules (libraries) that I made
 var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
 
+//home page logic, and serves the html/json that you see through browser, or the information you may see through client.. routing js files take care of the behind logic...
 var home = require('./routes/index');
 
 var debug = require('debug')('MediaAppServer');
 var app = express();
 
+//process.argv is the parameters passed in from RunServer.ps1 to allow the server to dynamically change based on where the user wants the files to be located...
 if (!endsWith(process.argv[2], "\\")) {
   process.argv[2] = process.argv[2] + "\\"
 }
 if (!endsWith(process.argv[3], "\\")) {
   process.argv[3] = process.argv[3] + "\\"
 }
-
+//function to find if a string ends with a certain character
 function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 //The location of the media which the server will look for..
+
+//Created an object that contains some different locations
 var dirs = {
   mediaDir: process.argv[2].replace("\\", "/"),
   mediaDirBack: process.argv[2].replace("\\\\", "\\"),
@@ -42,20 +49,22 @@ var dirs = {
 
 
 //set up server
+//sets port
 app.set('port', 8000);
 //fill in here if you are using a different IP address, same for port
 var ipAddr = "0.0.0.0";
-
-//var ipAddr = "localhost";
+//allows the server to just use the ip address on the network, or the computer name
 
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
+//mongodb is a database service that allows you to store collections of information/in my case text/json: That is what I use to save, and serve to the client, files
 
 //Used for synchronous operation, and passing values from callbacks outside.
 var categoryList = [];
 
 var fileListDB = [];
 
+//Function to initiate the server and use the data base throughout routes
 function expressInit(db, files, fileCollection, categoryCollection, categories) {
 
   //starts server on specified address
@@ -77,6 +86,7 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
 
 
   //Different URLs that client can go to for different purposes
+  //The first argument is the url, and the second argument is the function/route handler that gets called when a user makes the request to the specified url. In this case, I have a class method I call for each
   app.use('/', home);
   app.use('/download/:file', files.downloadFile.bind(files));
   app.use('/categories/', categories.get.bind(categories));
@@ -117,7 +127,7 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
   });
 };
 
-
+//connnects for the first time to the mongo database
 console.log('Attempting to connect to database...');
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
@@ -282,7 +292,7 @@ function fileValidation(fileCollection, filePathDB) {
 
 
 
-
+//exports the directories and express variable
 module.exports = {
   app: app,
   dirs: dirs
