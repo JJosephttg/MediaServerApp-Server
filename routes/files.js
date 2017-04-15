@@ -92,6 +92,26 @@ files.prototype.downloadFile = function(req, res) {
   }
 }
 
+files.prototype.uploadFile = function(req, res) {
+  var dirs = this.dirs;
+  console.log(req.files);
+  fs.readFile(req.files, function (err, data) {
+    if (err) {
+      res.status(404);
+    } else {
+      var newPath = dirs.MediaDir; //+ req.category + "/";
+      fs.writeFile(newPath, data, function (err) {
+        if (err) {
+          res.status(404);
+        } else {
+          res.status(200);
+        }
+      });
+    }
+  });
+}
+
+//Algorithm that can be used to replace all instances of a character, rather than just replacing a single instance...
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
