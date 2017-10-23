@@ -52,7 +52,11 @@ var dirs = {
 //sets port
 app.set('port', 8000);
 //fill in here if you are using a different IP address, same for port
-var ipAddr = "0.0.0.0";
+prod = false;
+
+var ipAddr= {
+  prod:"mediacloud.com",
+  local: "0.0.0.0"
 //allows the server to just use the ip address on the network, or the computer name
 
 //Same for mongodb
@@ -68,7 +72,7 @@ var fileListDB = [];
 function expressInit(db, files, fileCollection, categoryCollection, categories) {
 
   //starts server on specified address
-  var server = app.listen(app.get('port'), ipAddr, function() {
+  var server = app.listen(app.get('port'), prod = true ? ipAddr.prod : ipAddr.local, function() {
       debug('API server listening on port ' + server.address().port);
   });
 
@@ -87,12 +91,12 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
 
   //Different URLs that client can go to for different purposes
   //The first argument is the url, and the second argument is the function/route handler that gets called when a user makes the request to the specified url. In this case, I have a class method I call for each
-  app.use('/', home);
-  app.use('/upload/:category', files.uploadFile.bind(files));
-  app.use('/download/:file', files.downloadFile.bind(files));
-  app.use('/categories/', categories.get.bind(categories));
-  app.use('/fileicons/:iconname/', files.getIcons.bind(files));
-  app.use('/:category/', files.get.bind(files));
+  app.use('/api', home);
+  app.use('/api/upload/:category', files.uploadFile.bind(files));
+  app.use('/api/download/:file', files.downloadFile.bind(files));
+  app.use('/api/categories/', categories.get.bind(categories));
+  app.use('/api/fileicons/:iconname/', files.getIcons.bind(files));
+  app.use('/api/:category/', files.get.bind(files));
 
 
 
