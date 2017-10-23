@@ -14,7 +14,6 @@ try {
     cd $PSScriptRoot #Changes directory to the script directory which is in the root folder of the server
 
     Import-Module .\Settings.psm1 -Force #imports custom functions/modules I made (seperate file)
-    Import-Module .\scripts\getFileIcons.psm1 -Force
 
     $Settings = Get-Settings "./settings.txt" -Force #function to read from a settings.txt and format them into a dictionary/object with keys and values.
 
@@ -35,9 +34,7 @@ try {
     if ($defaultRes -eq "y") { #if the response is yes, use the default settings that were assigned, and start each component of the server asynchronously
         $mediaDir = $Settings.Default.MediaDir 
         $mediaIconDir = $Settings.Default.MediaIconDir
-        
-        Start-Job -ScriptBlock{param($mediaIconDir)Import-Module .\scripts\getFileIcons.psm1 -Force; Get-FileIcons -mediaIconDir $mediaIconDir} -ArgumentList $mediaIconDir
-        
+                
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
         Start-Server -mediaDir $mediaDir -mediaIconDir $mediaIconDir

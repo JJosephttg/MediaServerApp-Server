@@ -1,6 +1,7 @@
+//rewrite modules
 var _ = require('underscore');
 var fs = require('fs');
-var builder = require('xmlbuilder');
+var extractor = require('icon-extractor');
 
 //Does same comparison as categories, however, there are some differences between categories and files...
 function compareDB(a, b){
@@ -22,14 +23,16 @@ function compareDB(a, b){
       }
     }
     if (not_in_a != "") {};
-    return not_in_a
+    return not_in_a;
   }
 };
+
 //same as categories
 function filesAdded(fileList, filesDB, fileCollection) {
   var compare = compareDB(fileList, filesDB);
   return compare;
 };
+
 //same as above but opposite way
 function filesRemoved(fileList, filesDB, fileCollection) {
   var compare = compareDB(filesDB, fileList);
@@ -49,6 +52,7 @@ function addtoDB(files, fileCollection) {
     fileCollection.insert(obj);
   }
 };
+
 //Same as above, but removing files
 function removefromDB(files, fileCollection) {
   for(var i = 0; i < files.length; i++) {
@@ -58,9 +62,9 @@ function removefromDB(files, fileCollection) {
     fs.unlinkSync(imgPath);
   }
 };
+
 //Gets the thumbnail location and gives the signal to a powershell script that a file has been added and or removed and the powershell script deletes the removed file's icons, and retrieves the icon from added file..
 function getThumbnail(fileCollection, addedFiles) {
-  var xml = builder.create('root');
   for(var i = 0; i < addedFiles.length; i++) {
     var item = xml.ele('file');
     console.log(addedFiles[i].name);
@@ -69,21 +73,95 @@ function getThumbnail(fileCollection, addedFiles) {
     item.att('path', addedFiles[i].path);
     item.att('ext', addedFiles[i].ext);
   }
-  fs.writeFileSync('./scripts/info/NodeFileList.xml', xml);
-  while(!fs.existsSync('./scripts/info/AddedFiles.json')) {
-  }
-
-  while(fs.existsSync('./scripts/info/AddedFiles.json')) {
-    try {
-      var fileIconList = JSON.parse(fs.readFileSync('./scripts/info/AddedFiles.json'));
-      break;
-    } catch (err) {console.log(err);}
-  }
-  fs.unlinkSync('./scripts/info/AddedFiles.json');
+  //needs to return this as json object array
+//  name= $fileList.root.file[$i].name
+  //category=$fileList.root.file[$i].category
+  //path=$fileList.root.file[$i].path
+  //ext=$fileList.root.file[$i].ext
+  //imgLoc=$fileList.root.file[$i].imgLoc
 
   return fileIconList;
 
 };
+
+//function logic for process of validating files
+function validateFiles(fileCollection, filePathDB) {
+  if (!filePathDB) {
+    getFileDB(fileCollection);
+  } else {
+    fileValidation(fileCollection, filePathDB);
+
+  }
+}
+
+//Gets current files from database
+function getFileDB(fileCollection) {
+  fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
+    files = files.sort();
+    var filePathDB = [];
+    for (var i = 0; i < files.length; i++) {
+      fileListDB.push({
+        name: files[i].name,
+        path: files[i].path,
+        ext: files[i].ext,
+        category: files[i].category
+      });
+      filePathDB.push(files[i].path);
+    }
+    validateFiles(fileCollection, fileListDB, filePathDB);
+  });
+};
+
+//gets files via folders in media location and validates the files to database
+function fileValidation(fileCollection, filePathDB) {
+  //Find files and fill appropriate items...
+  //console.log('Actual Files are:');
+  var walk = function(dir, done) {
+    var results = [];
+    fs.readdir(dir, function(err, list) {
+      if (err) return done(err);
+      var i = 0;
+      (function next() {
+        var file = list[i++];
+        if (!file) return done(null, results);
+        file = path.resolve(dir, file);
+        fs.stat(file, function(err, stat) {
+          if (stat && stat.isDirectory()) {
+              walk(file, function(err, res) {
+              results = results.concat(res);
+              next();
+            });
+          } else {
+            var dirValues = path.parse(file).dir.split(dirs.mediaDirBack);
+            var category = dirValues[1];
+            if(category) {
+              results.push({
+                name: path.parse(file).name,
+                path: path.parse(file).dir + '\\' + path.parse(file).base,
+                ext: path.parse(file).ext,
+                category: category
+              });
+              //console.log(path.parse(file).name);
+            }
+            next();
+          }
+        });
+      })();
+    });
+  };
+  walk(dirs.mediaDir, function(err, results) {
+    if (err) throw err;
+    var fileList = results;
+    var filePathList = [];
+    for(var i = 0; i < results.length; i++) {
+      filePathList.push(results[i].path);
+    }
+    console.log('Validating files, updating file database');
+    updateDatabase(fileList, fileListDB, fileCollection, filePathDB, filePathList);
+
+  });
+};
+
 //updates the database through the functions that add and remove files that it detects that weren't there before.. (This is the main function)
 function updateDatabase(fileList, filesDB, fileCollection) {
   var dirs = require('../app').dirs;
@@ -121,4 +199,4 @@ function updateDatabase(fileList, filesDB, fileCollection) {
   console.log("File database up to date")
 };
 
-exports.updateDatabase = updateDatabase;
+exports.validateFiles = validateFiles;

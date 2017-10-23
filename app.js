@@ -57,37 +57,32 @@ prod = false;
 var ipAddr= {
   prod:"mediacloud.com",
   local: "0.0.0.0"
-//allows the server to just use the ip address on the network, or the computer name
+//allows the server to just use the ip address on the network, or the computer name (0.0.0.0)
 
 //Same for mongodb
 var url = 'mongodb://localhost:27017/MediaServerDB';
-//mongodb is a database service that allows you to store collections of information/in my case text/json: That is what I use to save, and serve to the client, files
 
 //Used for synchronous operation, and passing values from callbacks outside.
 var categoryList = [];
-
 var fileListDB = [];
 
 //Function to initiate the server and use the data base throughout routes
 function expressInit(db, files, fileCollection, categoryCollection, categories) {
-
   //starts server on specified address
   var server = app.listen(app.get('port'), prod = true ? ipAddr.prod : ipAddr.local, function() {
-      debug('API server listening on port ' + server.address().port);
+      debug('Server listening on port ' + server.address().port);
   });
 
   // view engine setup
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
-
-  // uncomment after placing your favicon in /public
-  //app.use(favicon(__dirname + '/public/favicon.ico'));
   app.use(logger('dev'));
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(express.static(path.join(__dirname, 'public')));
-
+  // uncomment after placing your favicon in /public
+  //app.use(favicon(__dirname + '/public/favicon.ico'));
 
   //Different URLs that client can go to for different purposes
   //The first argument is the url, and the second argument is the function/route handler that gets called when a user makes the request to the specified url. In this case, I have a class method I call for each
@@ -144,158 +139,11 @@ MongoClient.connect(url, function(err, db) {
   var categoriesRoute = require('./routes/categories.js')
     , categories = new categoriesRoute(db, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
-  validateDB(fileCollection, categoryCollection);
+  updateCategories.validateCategories(categoryCollection);
+  updateFiles.validateFiles(fileCollection);
   //passes db variable to routes
   expressInit(db, files, fileCollection, categoryCollection, categories);
-
-
-
 });
-
-//Process for validating both category DB and file DB
-function validateDB(fileCollection, categoryCollection) {
-  validateCategories(categoryCollection);
-  validateFiles(fileCollection);
-};
-
-//function logic for process of validating categories
-function validateCategories(categoryCollection, sv) {
-  if (!sv) {
-    getCategoryDB(categoryCollection);
-  } else {
-    categoryValidation(categoryCollection, sv);
-    categoryList = [];
-  }
-};
-
-//function logic for process of validating files
-function validateFiles(fileCollection, filePathDB) {
-  if (!filePathDB) {
-    getFileDB(fileCollection);
-  } else {
-    fileValidation(fileCollection, filePathDB);
-
-  }
-}
-
-//Gets the current categories from actual database
-function getCategoryDB(categoryCollection) {
-  categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
-    //console.log('');
-    //console.log("Current database categories are:");
-    categories = categories.sort();
-    for (var i = 0; i < categories.length; i++) {
-      //console.log(categories[i].Category);
-      categoryList.push(categories[i].Category);
-    };
-    validateCategories(categoryCollection, categoryList);
-  });
-};
-
-//Gets current files from database
-function getFileDB(fileCollection) {
-  fileCollection.find({}, {"name": 1, "_id" : 0, "path": 1, "ext": 1, "category": 1}).toArray(function(err, files) {
-    files = files.sort();
-    var filePathDB = [];
-    for (var i = 0; i < files.length; i++) {
-      fileListDB.push({
-        name: files[i].name,
-        path: files[i].path,
-        ext: files[i].ext,
-        category: files[i].category
-      });
-      filePathDB.push(files[i].path);
-    }
-    validateFiles(fileCollection, fileListDB, filePathDB);
-  });
-};
-
-
-//gets categories via actual folders in media location and validates against database
-function categoryValidation(categoryCollection, categoriesDB) {
-  fs.readdir(dirs.mediaDir, function (err, files) {
-    if (err) {
-        throw err;
-    }
-    var verifiedCategories = [];
-    //console.log('Actual Categories are:');
-    files.map(function (file) {
-        return path.join(file);
-    }).forEach(function (file) {
-        if (path.extname(file) == '') {
-          //console.log("%s", file);
-          verifiedCategories.push(file);
-        }
-    });
-    //Now to compare to the database...
-    //console.log('');
-    //console.log("Comparing and making appropriate category changes to database...")
-
-    if (verifiedCategories.sort().length == categoriesDB.sort().length && verifiedCategories.sort().every(function(u, i) {
-      return u === categoriesDB.sort()[i];
-    })) {
-      //console.log('No category changes necessary, database is up to date!');
-    } else {
-      //console.log('Category database not up to date, making database changes...');
-      updateCategories.updateDatabase(verifiedCategories, categoriesDB, categoryCollection);
-    }});
-  };
-
-//gets files via folders in media location and validates the files to database
-function fileValidation(fileCollection, filePathDB) {
-  //Find files and fill appropriate items...
-  //console.log('Actual Files are:');
-  var walk = function(dir, done) {
-    var results = [];
-    fs.readdir(dir, function(err, list) {
-      if (err) return done(err);
-      var i = 0;
-      (function next() {
-        var file = list[i++];
-        if (!file) return done(null, results);
-        file = path.resolve(dir, file);
-        fs.stat(file, function(err, stat) {
-          if (stat && stat.isDirectory()) {
-              walk(file, function(err, res) {
-              results = results.concat(res);
-              next();
-            });
-          } else {
-            var dirValues = path.parse(file).dir.split(dirs.mediaDirBack);
-            var category = dirValues[1];
-            if(category) {
-              results.push({
-                name: path.parse(file).name,
-                path: path.parse(file).dir + '\\' + path.parse(file).base,
-                ext: path.parse(file).ext,
-                category: category
-              });
-              //console.log(path.parse(file).name);
-            }
-            next();
-          }
-        });
-      })();
-    });
-  };
-  walk(dirs.mediaDir, function(err, results) {
-    if (err) throw err;
-    var fileList = results;
-    var filePathList = [];
-    for(var i = 0; i < results.length; i++) {
-      filePathList.push(results[i].path);
-    }
-    console.log('Validating files, updating file database');
-    updateFiles.updateDatabase(fileList, fileListDB, fileCollection, filePathDB, filePathList);
-
-  });
-};
-
-
-
-
-
-
 
 //exports the directories and express variable
 module.exports = {
