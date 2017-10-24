@@ -17,7 +17,7 @@ files.prototype.get = function(req, res) {
   var db = this.db;
   var fileCollection = this.fileCollection;
   var categoryCollection = this.categoryCollection;
-  if (req.params.category == 'all') {
+  if (req.params.category.toLowerCase() == 'all') {
     fileCollection.find({}, {'_id': 0}).toArray(function(err, result) {
       if (err) {throw err}
       else {
@@ -66,22 +66,15 @@ files.prototype.getIcons = function(req, res) {
 
 //Used to serve the files to client. When the download button is clicked client side, the server gets a request with the file name, category, and extension within the url... it can then find the file and respond
 //with it....
+
+//format: <category>|<Filename>.<ext>
 files.prototype.downloadFile = function(req, res) {
   var dirs = this.dirs;
-  console.log(req.params.file);
-
   var path = req.params.file.replaceAll('\\|', '/');
   var pathDiv = path.split('/');
   fileName = pathDiv[pathDiv.length-1]
 
-  console.log(path);
-  try {
-    path.split(dirs.mediaDir);
-  } catch (error) {
-    res.status(404);
-    res.end();
-    return;
-  }
+  path = dirs.mediaDir + path;
   if (fs.existsSync(path)) {
     res.setHeader('Content-disposition', 'attachment; filename=' + fileName);
     res.download(path, fileName);

@@ -27,7 +27,6 @@ try {
         }
     }
 
-    $script = "./scripts/getFileIcons.ps1"
     $mongoScript = "C:\Program Files\MongoDB\Server\3.4\bin\mongod.exe"
 
 
@@ -50,9 +49,7 @@ try {
             $Settings.Default.MediaIconDir = $mediaIconDir
 
             Set-Settings settings.txt $Settings
-        }
-        Start-Job -ScriptBlock{${functionGet-FileIcons -mediaIconDir $mediaIconDir}} #After saving or not saving the settings, it starts the server and its components (Note to self, I will have to put these in functions as I repeated this twice)
-        
+        }        
         Start-Job -ScriptBlock{param($mongoScript)Invoke-Command -ScriptBlock {param($mongoScript)cd C:/; cmd.exe /C $mongoScript} -ArgumentList $mongoScript} -ArgumentList $mongoScript
         Start-Sleep -Seconds 3
         Start-Server -mediaDir $mediaDir  -mediaIconDir $mediaIconDir

@@ -1,3 +1,8 @@
+//Used for synchronous operation, and passing values from callbacks outside.
+var categoryList = [];
+var fs = require('fs');
+var path = require('path');
+
 //function that takes one list and finds all categories in the other list that aren't in the first list
 function compareDB(a, b){
  var not_in_a=new Array;
@@ -43,17 +48,17 @@ function removefromDB(categories, categoryCollection) {
 };
 
 //function logic for process of validating categories
-function validateCategories(categoryCollection, sv) {
+function validateCategories(categoryCollection, dirs, sv) {
   if (!sv) {
-    getCategoryDB(categoryCollection);
+    getCategoryDB(categoryCollection, dirs);
   } else {
-    categoryValidation(categoryCollection, sv);
+    categoryValidation(categoryCollection, sv, dirs);
     categoryList = [];
   }
 };
 
 //Gets the current categories from actual database
-function getCategoryDB(categoryCollection) {
+function getCategoryDB(categoryCollection, dirs) {
   categoryCollection.find({}, {"Category": 1, "_id":0}).toArray(function(err, categories) {
     //console.log('');
     //console.log("Current database categories are:");
@@ -62,12 +67,12 @@ function getCategoryDB(categoryCollection) {
       //console.log(categories[i].Category);
       categoryList.push(categories[i].Category);
     };
-    validateCategories(categoryCollection, categoryList);
+    validateCategories(categoryCollection, dirs, categoryList);
   });
 };
 
 //gets categories via actual folders in media location and validates against database
-function categoryValidation(categoryCollection, categoriesDB) {
+function categoryValidation(categoryCollection, categoriesDB, dirs) {
   fs.readdir(dirs.mediaDir, function (err, files) {
     if (err) {
         throw err;

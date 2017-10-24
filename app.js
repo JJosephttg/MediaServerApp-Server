@@ -1,6 +1,4 @@
-//App.js is the "master script"/controller of everything. The server starts with this script....
 'use strict';
-//all the libraries that are needed
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -12,30 +10,29 @@ var MongoClient = mongodb.MongoClient;
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var debug = require('debug')('MediaAppServer');
 
+var app = express();
 //importing my own custom modules (libraries) that I made
 var updateCategories = require('./libs/categoryvalidation');
 var updateFiles = require('./libs/filevalidation');
 
-//home page logic, and serves the html/json that you see through browser, or the information you may see through client.. routing js files take care of the behind logic...
-var home = require('./routes/index');
-
-var debug = require('debug')('MediaAppServer');
-var app = express();
-
 //process.argv is the parameters passed in from RunServer.ps1 to allow the server to dynamically change based on where the user wants the files to be located...
 if (!endsWith(process.argv[2], "\\")) {
-  process.argv[2] = process.argv[2] + "\\"
+  process.argv[2] = process.argv[2] + "\\";
 }
 if (!endsWith(process.argv[3], "\\")) {
-  process.argv[3] = process.argv[3] + "\\"
+  process.argv[3] = process.argv[3] + "\\";
 }
-//function to find if a string ends with a certain character
-function endsWith(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-}
-//The location of the media which the server will look for..
 
+app.set('port', 8000);
+var url = 'mongodb://localhost:27017/MediaServerDB';
+var prod = false;
+
+var ipAddr= {
+  prod:"mediacloud.com",
+  local: "0.0.0.0" //allows the server to just use the ip address on the network, or the computer name (0.0.0.0)
+}
 //Created an object that contains some different locations
 var dirs = {
   mediaDir: process.argv[2].replace("\\", "/"),
@@ -43,36 +40,21 @@ var dirs = {
   mediaIMGLoc: process.argv[3].replace("\\", "/"),
   mediaIMGLocBack: process.argv[3].replace("\\\\", "\\"),
   root: process.argv[2].split(":")[0] + ":/",
-  rootBack: process.argv[2].split(":")[0] + ":\\"
+  rootBack: process.argv[2].split(":")[0] + ":\\",
 }
-
-
-
-//set up server
-//sets port
-app.set('port', 8000);
-//fill in here if you are using a different IP address, same for port
-prod = false;
-
-var ipAddr= {
-  prod:"mediacloud.com",
-  local: "0.0.0.0"
-//allows the server to just use the ip address on the network, or the computer name (0.0.0.0)
-
-//Same for mongodb
-var url = 'mongodb://localhost:27017/MediaServerDB';
 
 //Used for synchronous operation, and passing values from callbacks outside.
 var categoryList = [];
-var fileListDB = [];
+
+//home page logic, and serves the html/json that you see through browser, or the information you may see through client.. routing js files take care of the behind logic...
+var home = require('./routes/index');
 
 //Function to initiate the server and use the data base throughout routes
 function expressInit(db, files, fileCollection, categoryCollection, categories) {
   //starts server on specified address
-  var server = app.listen(app.get('port'), prod = true ? ipAddr.prod : ipAddr.local, function() {
+  var server = app.listen(app.get('port'), prod == true ? ipAddr.prod : ipAddr.local, function() {
       debug('Server listening on port ' + server.address().port);
   });
-
   // view engine setup
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'pug');
@@ -101,8 +83,6 @@ function expressInit(db, files, fileCollection, categoryCollection, categories) 
       err.status = 404;
       next(err);
   });
-
-  // error handlers
 
   // development error handler
   // will print stacktrace
@@ -139,14 +119,18 @@ MongoClient.connect(url, function(err, db) {
   var categoriesRoute = require('./routes/categories.js')
     , categories = new categoriesRoute(db, categoryCollection);
   //Does checks on category and file collection and logs categories that currently exist
-  updateCategories.validateCategories(categoryCollection);
-  updateFiles.validateFiles(fileCollection);
+  updateCategories.validateCategories(categoryCollection, dirs);
+  updateFiles.validateFiles(fileCollection, dirs);
   //passes db variable to routes
   expressInit(db, files, fileCollection, categoryCollection, categories);
 });
 
-//exports the directories and express variable
+//function to find if a string ends with a certain character
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
 module.exports = {
   app: app,
-  dirs: dirs
+  dirs: dirs,
 }

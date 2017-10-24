@@ -18,15 +18,16 @@
     "edge-ps": "0.1.0-pre",
     "edge-py": "^0.1.0",
     "express": "^4.14.0",
+    "icon-extractor": "^1.0.3",
     "mongodb": "^2.2.21",
     "morgan": "^1.7.0",
     "node-watch": "^0.4.1",
+    "nodemon": "latest",
     "pug": "^2.0.0-beta6",
     "serve-favicon": "^2.3.0",
     "socket.io": "^1.7.2",
     "underscore": "^1.8.3",
     "xml2js": "^0.4.17",
-    "xmlbuilder": "^8.2.2",
-    "nodemon": "latest"
+    "xmlbuilder": "^8.2.2"
   }
 }
