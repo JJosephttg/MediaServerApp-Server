@@ -13,3 +13,8 @@ Finally create a Media directory in the root of a drive and a MediaIcons directo
 Also if you edit the config, ONLY USE BACKSLASHES IN THE DIRECTORIES. (Will be fixed hopefully soon)
 
 By the way, I recommend for using the server to use the latest branch for development
+
+
+#Note to Any Visitors:
+
+This project is discontinued on GitHub and pursued on separate source control due to privacy and a change of approach.
